@@ -14,30 +14,27 @@
 % ## along with Octave; see the file COPYING.  If not, see
 % ## <http://www.gnu.org/licenses/>.
 
-% ## mac_rhs
+% ## RBFunc_CompactC4
 
 % ## Author: homu <homu@HOMU-PC>
-% ## Created: 2013-06-26
+% ## Created: 2013-07-29
 
-function [ rhs ] = mac_rhs (ustar,vstar, nx,ny, dx,dy,dt)
-    N = nx * ny;
-    % rhs = zeros(N,1);
-    
-    % idx = 0;
-    % for j = 2:ny+1
-        % for i = 2:nx+1
-            % idx = idx + 1;
-            
-            % divu = (ustar(i,j)-ustar(i-1,j)) / dx + (vstar(i,j)-vstar(i,j-1)) / dy;
-            % rhs(idx) = -divu / dt;
-        % end
-    % end
-    
-    rhs = 1/dx * (ustar(2:nx+1,2:ny+1) - ustar(1:nx,2:ny+1)) + ... 
-        1/dy* (vstar(2:nx+1,2:ny+1) - vstar(2:nx+1,1:ny));
-    rhs = -1/dt * rhs;
-    rhs = reshape(rhs, N, []);
-    
-    % inject reference pressure
-    rhs(1) = 0;
+function [ R,dRdr ] = RBFunc_CompactC4 (r,supp)
+
+q = r ./ supp;
+q2 = q.^2;
+q3 = q.^3;
+q4 = q.^4;
+q5 = q.^5;
+
+Rq = (1-q).^6 .* (6 + 36*q + 82*q2 + 72*q3 + 30*q4 + 5*q5);
+dRdq = -6*(1-q).^5 .* (6 + 36*q + 82*q2 + 72*q3 + 30*q4 + 5*q5) + ...
+    (1-q).^6 .* (36 + 164*q + 216*q2 + 120*q3 + 25*q4);
+
+R = (q<=1) .* Rq;
+dRdr = (q<=1) .* dRdq ./ supp;
+
+return
 end
+
+

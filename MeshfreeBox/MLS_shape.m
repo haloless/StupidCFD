@@ -23,6 +23,7 @@ function [ phi,phi_x,phi_y ] = MLS_shape (xc,yc,xs,ys,re,neigh)
 % Description:
 % return phi, dphi_dx, dphi_dy in sparse row vectors
 
+use_pseudo_inverse = 1;
 
 % weight function, in sparse vector
 [w,dwdx,dwdy] = MLS_weight(xc,yc,xs,ys,re,neigh);
@@ -43,7 +44,19 @@ P = MLS_basis(xs,ys,neigh)';
 % building blocks for MLS shape func.
 B = P' * W;
 A = B * P;
-invA = inv(A);
+if (use_pseudo_inverse)
+    % use pseudo-inverse instead
+    [U,S,V] = svd(A);
+    smax = max(abs(diag(S)));
+    trunc = find(abs(diag(S))<smax*1e-6);
+    invS = 1 ./ diag(S);
+    invS(trunc) = 0;
+    invS = diag(invS);
+    invA = V * invS * U';
+else
+    % no-good if ill-conditioned
+    invA = inv(A);
+end
 
 B_x = P' * W_x;
 B_y = P' * W_y;

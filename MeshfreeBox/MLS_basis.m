@@ -23,7 +23,7 @@ function [ p,dpdx,dpdy ] = MLS_basis (x,y,neigh)
 
 % Description:
 % return column-based representation
-% [p(x1), p(x2), p(x3), ...], with p(x) = [1Å x y ...]^T
+% [p(x1), p(x2), p(x3), ...], with p(x) = [1?x y ...]^T
 
 do_cutoff = true;
 if nargin==2 % no neighborhood info., use full vector instead
@@ -36,7 +36,7 @@ if iscolumn(y); y=y'; end
 if iscolumn(neigh); neigh=neigh'; end
 
 
-MLS_order = 2;
+MLS_order = 1;
 k = (MLS_order+1)*(MLS_order+2)/2;
 
 sz = size(x);
@@ -63,7 +63,7 @@ switch MLS_order
 		error('Unsupported MLS_order=%d',MLS_order);
 end
 
-if do_cutoff
+if do_cutoff && isvector(p)
 	for i = 1:rows(p)
 		p(i,:) = neigh .* p(i,:);
 		dpdx(i,:) = neigh .* dpdx(i,:);

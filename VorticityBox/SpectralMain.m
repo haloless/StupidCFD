@@ -50,13 +50,13 @@ dt = 1e-2;
 [is,js] = meshgrid(1:Nx,1:Ny);
 [xs,ys] = meshgrid((1:Nx)*dx-dx/2,(1:Ny)*dy-dy/2);
 
-prob_name = 'TaylorGreen';
+prob_name = 'vortice2';
 
 switch prob_name
     case {'vortice2'}
         sigma = pi/10;
-        x1 = y1 = 4*pi/5;
-        x2 = y2 = 6*pi/5;
+        x1 = 4*pi/5; y1 = x1;
+        x2 = 6*pi/5; y2 = x2;
         fw = @(x,y) exp((cos(x-x1)+cos(y-y1)-2) / sigma^2) + exp((cos(x-x2)+cos(y-y2)-2) / sigma^2);
         w0 = fw(xs,ys) - dblquad(fw,0,Lx,0,Ly);
     case {'TaylorGreen'}

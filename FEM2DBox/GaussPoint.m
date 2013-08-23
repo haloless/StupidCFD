@@ -14,30 +14,25 @@
 % ## along with Octave; see the file COPYING.  If not, see
 % ## <http://www.gnu.org/licenses/>.
 
-% ## mac_rhs
+% ## GaussPoint
 
 % ## Author: homu <homu@HOMU-PC>
-% ## Created: 2013-06-26
+% ## Created: 2013-07-30
 
-function [ rhs ] = mac_rhs (ustar,vstar, nx,ny, dx,dy,dt)
-    N = nx * ny;
-    % rhs = zeros(N,1);
-    
-    % idx = 0;
-    % for j = 2:ny+1
-        % for i = 2:nx+1
-            % idx = idx + 1;
-            
-            % divu = (ustar(i,j)-ustar(i-1,j)) / dx + (vstar(i,j)-vstar(i,j-1)) / dy;
-            % rhs(idx) = -divu / dt;
-        % end
-    % end
-    
-    rhs = 1/dx * (ustar(2:nx+1,2:ny+1) - ustar(1:nx,2:ny+1)) + ... 
-        1/dy* (vstar(2:nx+1,2:ny+1) - vstar(2:nx+1,1:ny));
-    rhs = -1/dt * rhs;
-    rhs = reshape(rhs, N, []);
-    
-    % inject reference pressure
-    rhs(1) = 0;
+function [ point,weight ] = GaussPoint (numNode,numGauss)
+
+switch numGauss
+    case {4}
+        a = 1 / sqrt(3);
+        xi = [-a; a; -a; a];
+        eta = [-a; -a; a; a];
+        point = [xi, eta];
+        weight = ones(4,1);
+    otherwise
+        error('Unsupported Node=%d Gauss=%d',numNode,numGauss);
+end
+
+
+
+return
 end

@@ -36,7 +36,7 @@ Lpsi = kron(speye(ny-1),K1(nx-1,dx,2))+kron(K1(ny-1,dy,2),speye(nx-1));
 rhs = zeros(nx-1,ny-1);
 rhs = rhs - 1/dy * (umac(2:nx,3:ny+1) - umac(2:nx,2:ny));
 rhs = rhs + 1/dx * (vmac(3:nx+1,2:ny) - vmac(2:nx,2:ny));
-rhs = reshape(rhs,Npsi);
+rhs = reshape(rhs,Npsi,[]);
 
 perm = symamd(Lpsi);
 RLpsi = chol(Lpsi(perm,perm));

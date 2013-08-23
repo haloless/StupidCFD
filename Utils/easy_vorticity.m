@@ -14,30 +14,20 @@
 % ## along with Octave; see the file COPYING.  If not, see
 % ## <http://www.gnu.org/licenses/>.
 
-% ## mac_rhs
+% ## ../Utils/easy_vorticity
 
 % ## Author: homu <homu@HOMU-PC>
-% ## Created: 2013-06-26
+% ## Created: 2013-08-09
 
-function [ rhs ] = mac_rhs (ustar,vstar, nx,ny, dx,dy,dt)
-    N = nx * ny;
-    % rhs = zeros(N,1);
-    
-    % idx = 0;
-    % for j = 2:ny+1
-        % for i = 2:nx+1
-            % idx = idx + 1;
-            
-            % divu = (ustar(i,j)-ustar(i-1,j)) / dx + (vstar(i,j)-vstar(i,j-1)) / dy;
-            % rhs(idx) = -divu / dt;
-        % end
-    % end
-    
-    rhs = 1/dx * (ustar(2:nx+1,2:ny+1) - ustar(1:nx,2:ny+1)) + ... 
-        1/dy* (vstar(2:nx+1,2:ny+1) - vstar(2:nx+1,1:ny));
-    rhs = -1/dt * rhs;
-    rhs = reshape(rhs, N, []);
-    
-    % inject reference pressure
-    rhs(1) = 0;
+function [ vort ] = easy_vorticity (xs,ys,nx,ny,dx,dy,u,v)
+% Description
+% vorticity = dv/dx - du/dy
+% using cell velocity on [-1:nx+1] by [-1:ny+1]
+
+
+I = 2:nx+1;
+J = 2:ny+1;
+vort = 1/(2*dx) * (v(I+1,J)-v(I-1,J)) - 1/(2*dy) * (u(I,J+1)-u(I,J-1));
+
+return
 end

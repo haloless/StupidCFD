@@ -36,7 +36,7 @@ function [ lap ] = mac_laplacian (nx,ny, dx,dy, bc)
     % As = zeros(nx,ny);
     % As(1:nx,2:ny) = 1/dy^2;   
     
-    lap = sparse(N); 
+    lap = sparse(N,N); 
     stride = nx;
     
     idx = 0;

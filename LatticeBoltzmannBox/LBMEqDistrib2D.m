@@ -14,30 +14,25 @@
 % ## along with Octave; see the file COPYING.  If not, see
 % ## <http://www.gnu.org/licenses/>.
 
-% ## mac_rhs
+% ## LBMEqDistrib
 
 % ## Author: homu <homu@HOMU-PC>
-% ## Created: 2013-06-26
+% ## Created: 2013-08-19
 
-function [ rhs ] = mac_rhs (ustar,vstar, nx,ny, dx,dy,dt)
-    N = nx * ny;
-    % rhs = zeros(N,1);
-    
-    % idx = 0;
-    % for j = 2:ny+1
-        % for i = 2:nx+1
-            % idx = idx + 1;
-            
-            % divu = (ustar(i,j)-ustar(i-1,j)) / dx + (vstar(i,j)-vstar(i,j-1)) / dy;
-            % rhs(idx) = -divu / dt;
-        % end
-    % end
-    
-    rhs = 1/dx * (ustar(2:nx+1,2:ny+1) - ustar(1:nx,2:ny+1)) + ... 
-        1/dy* (vstar(2:nx+1,2:ny+1) - vstar(2:nx+1,1:ny));
-    rhs = -1/dt * rhs;
-    rhs = reshape(rhs, N, []);
-    
-    % inject reference pressure
-    rhs(1) = 0;
+function [ fEq ] = LBMEqDistrib2D (rho,u,v,nx,ny, qwgt,qex,qey, qc,cs2)
+% Description
+
+cs4 = cs2^2;
+nlink = length(qwgt);
+
+fEq = zeros(length(rho),nlink);
+vel2 = u.^2 + v.^2;
+
+for i = 1:nlink
+    eu = qc * (qex(i)*u + qey(i)*v);
+    fEq(:,i) = qwgt(i) * rho .* (1 + 1/cs2*eu + 1/(2*cs4)*(eu.^2) - 1/(2*cs2)*vel2);
+end
+
+
+return
 end

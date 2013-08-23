@@ -14,30 +14,22 @@
 % ## along with Octave; see the file COPYING.  If not, see
 % ## <http://www.gnu.org/licenses/>.
 
-% ## mac_rhs
+% ## RBF_GA
 
 % ## Author: homu <homu@HOMU-PC>
-% ## Created: 2013-06-26
+% ## Created: 2013-07-28
 
-function [ rhs ] = mac_rhs (ustar,vstar, nx,ny, dx,dy,dt)
-    N = nx * ny;
-    % rhs = zeros(N,1);
-    
-    % idx = 0;
-    % for j = 2:ny+1
-        % for i = 2:nx+1
-            % idx = idx + 1;
-            
-            % divu = (ustar(i,j)-ustar(i-1,j)) / dx + (vstar(i,j)-vstar(i,j-1)) / dy;
-            % rhs(idx) = -divu / dt;
-        % end
-    % end
-    
-    rhs = 1/dx * (ustar(2:nx+1,2:ny+1) - ustar(1:nx,2:ny+1)) + ... 
-        1/dy* (vstar(2:nx+1,2:ny+1) - vstar(2:nx+1,1:ny));
-    rhs = -1/dt * rhs;
-    rhs = reshape(rhs, N, []);
-    
-    % inject reference pressure
-    rhs(1) = 0;
+function [ R,dRdr ] = RBFunc_GA (rs, epsilon)
+% Description
+% @(r,eps) exp(-(eps.*r).^2);
+
+e2 = epsilon^2;
+
+R = exp(-e2 * rs.^2);
+dRdr = -2*e2 * rs .* R;
+d2Rdr2 = (-2*e2 + 4*e2^2*rs.^2) .* R;
+
+
+
+return
 end

@@ -14,30 +14,40 @@
 % ## along with Octave; see the file COPYING.  If not, see
 % ## <http://www.gnu.org/licenses/>.
 
-% ## mac_rhs
+% ## VelocityBC
 
 % ## Author: homu <homu@HOMU-PC>
-% ## Created: 2013-06-26
+% ## Created: 2013-08-07
 
-function [ rhs ] = mac_rhs (ustar,vstar, nx,ny, dx,dy,dt)
-    N = nx * ny;
-    % rhs = zeros(N,1);
-    
-    % idx = 0;
-    % for j = 2:ny+1
-        % for i = 2:nx+1
-            % idx = idx + 1;
-            
-            % divu = (ustar(i,j)-ustar(i-1,j)) / dx + (vstar(i,j)-vstar(i,j-1)) / dy;
-            % rhs(idx) = -divu / dt;
-        % end
-    % end
-    
-    rhs = 1/dx * (ustar(2:nx+1,2:ny+1) - ustar(1:nx,2:ny+1)) + ... 
-        1/dy* (vstar(2:nx+1,2:ny+1) - vstar(2:nx+1,1:ny));
-    rhs = -1/dt * rhs;
-    rhs = reshape(rhs, N, []);
-    
-    % inject reference pressure
-    rhs(1) = 0;
+function [ umac,vmac ] = VelocityBC (umac,vmac,nx,ny)
+
+global UIn;
+
+% umac(1,:) = 0;
+
+% x low
+umac(1,2:ny+1) = UIn;
+umac(2,2:ny+1) = UIn;
+vmac(1,2:ny+2) = -vmac(2,2:ny+2);
+
+
+% y low
+umac(2:nx+2,1) = -umac(2:nx+2,2);
+vmac(2:nx+1,1) = vmac(2:nx+1,3);
+vmac(2:nx+1,2) = 0;
+
+% y high
+umac(2:nx+2,ny+2) = -umac(2:nx+2,ny+1);
+vmac(2:nx+1,ny+3) = vmac(2:nx+1,ny+1);
+vmac(2:nx+1,ny+2) = 0;
+
+% x high
+% Neumann
+umac(nx+3,2:ny+1) = umac(nx+2,2:ny+1); 
+vmac(nx+2,2:ny+2) = vmac(nx+1,2:ny+2);
+
+
+
+
+return
 end

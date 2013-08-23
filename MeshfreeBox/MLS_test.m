@@ -45,7 +45,7 @@ reproduce = [phi; phi_x; phi_y] * [ones(N,1),xs,ys]
 theoretic = [1, xc, yc; 0, 1, 0; 0, 0, 1]
 
 
-if true
+if (1) % test grid data
 	clear all;
 	
 	n = 33;
@@ -106,9 +106,79 @@ if true
 	figure;
 	subplot(2,2,1); surf(X',Y',dZdXh'); title('MLS: dZ/dX');
 	subplot(2,2,2); surf(X',Y',dZdYh'); title('MLS: dZ/dY');
-
+    
 	dZdX = (1-2*X.^2) .* exp(-X.^2-Y.^2);
 	subplot(2,2,3); surf(X',Y',dZdX'); title('Analytical: dZ/dX');
 	dZdY = -2*X.*Y .* exp(-X.^2-Y.^2);
 	subplot(2,2,4); surf(X',Y',dZdY'); title('Analytical: dZ/dY');
 end
+
+if (1) % test singular
+    clear all;
+    
+    nx = 33;
+    ny = 2;
+    h0 = 4 / (nx-1);
+    dilation = 2.5;
+    re = h0 * dilation;
+    
+    [X,Y] = ndgrid(linspace(-2,2,nx),linspace(-0.5,0.5,ny));
+    Z = X .* exp(-X.^2 - Y.^2);
+    dZdX = (1-2*X.^2) .* exp(-X.^2-Y.^2);
+    dZdY = -2*X.*Y .* exp(-X.^2-Y.^2);
+    
+    N = nx * ny;
+    xs = X(:);
+    ys = Y(:);
+    zs = Z(:);
+    
+    S = sparse(N,N); % shape matrix
+    Dx = sparse(N,N); % gradient matrix
+    Dy = sparse(N,N);
+    for i = 1:N
+        xc = xs(i);
+        yc = ys(i);
+        
+        % connectivity (or neighborhood)
+        neigh = MLS_neigh(xc,yc,xs,ys,re);
+        
+        % shape function
+        [phi,phi_x,phi_y] = MLS_shape(xc,yc,xs,ys,re,neigh);
+        S(i,:) = phi;
+        
+        Dx(i,:) = phi_x;
+        Dy(i,:) = phi_y;
+    end
+    
+    % MLS approximation to Z
+    zh = S * zs;
+    Zh = reshape(zh,nx,ny);
+    
+    if (1)
+        figure;
+        subplot(2,2,1); surf(X',Y',Z'); title('z');
+        subplot(2,2,2); surf(X',Y',Zh'); title('z-MLS');
+        subplot(2,2,3); surf(X',Y',(Zh-Z)'); title('z-err');
+    end
+    
+    %
+    dzdxh = Dx * zs;
+    dzdyh = Dy * zs;
+    dZdXh = reshape(dzdxh,nx,ny);
+    dZdYh = reshape(dzdyh,nx,ny);
+    
+    if(1)
+        figure;
+        subplot(2,2,1); surf(X',Y',dZdX'); title('dz/dx');
+        subplot(2,2,2); surf(X',Y',dZdXh'); title('dz/dx-MLS');
+        subplot(2,2,3); surf(X',Y',(dZdXh-dZdX)'); title('dz/dx-err');
+        figure;
+        subplot(2,2,1); surf(X',Y',dZdY'); title('dz/dy');
+        subplot(2,2,2); surf(X',Y',dZdYh'); title('dz/dy-MLS');
+        subplot(2,2,3); surf(X',Y',(dZdYh-dZdY)'); title('dz/dy-err');
+    end
+end
+
+
+
+

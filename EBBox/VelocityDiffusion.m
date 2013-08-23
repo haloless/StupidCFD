@@ -14,30 +14,29 @@
 % ## along with Octave; see the file COPYING.  If not, see
 % ## <http://www.gnu.org/licenses/>.
 
-% ## mac_rhs
+% ## VelocityDiffusion
 
 % ## Author: homu <homu@HOMU-PC>
-% ## Created: 2013-06-26
+% ## Created: 2013-08-12
 
-function [ rhs ] = mac_rhs (ustar,vstar, nx,ny, dx,dy,dt)
-    N = nx * ny;
-    % rhs = zeros(N,1);
-    
-    % idx = 0;
-    % for j = 2:ny+1
-        % for i = 2:nx+1
-            % idx = idx + 1;
-            
-            % divu = (ustar(i,j)-ustar(i-1,j)) / dx + (vstar(i,j)-vstar(i,j-1)) / dy;
-            % rhs(idx) = -divu / dt;
-        % end
-    % end
-    
-    rhs = 1/dx * (ustar(2:nx+1,2:ny+1) - ustar(1:nx,2:ny+1)) + ... 
-        1/dy* (vstar(2:nx+1,2:ny+1) - vstar(2:nx+1,1:ny));
-    rhs = -1/dt * rhs;
-    rhs = reshape(rhs, N, []);
-    
-    % inject reference pressure
-    rhs(1) = 0;
+function [ Diffu Diffv ] = VelocityDiffusion (umac,vmac,nx,ny,dx,dy,dt)
+
+EBGlobals;
+
+Diffu = zeros(nx+3,ny+2);
+I = 2:nx+2;
+J = 2:ny+1;
+udiff = 1/dx^2 * (umac(I+1,J) - 2*umac(I,J) + umac(I-1,J)) ...
+    + 1/dy^2 * (umac(I,J+1) - 2*umac(I,J) + umac(I,J-1));
+Diffu(I,J) = nu * udiff;
+
+Diffv = zeros(nx+2,ny+3);
+I = 2:nx+1;
+J = 2:ny+2;
+vdiff = 1/dx^2 * (vmac(I+1,J) - 2*vmac(I,J) + vmac(I-1,J)) ...
+    + 1/dy^2 * (vmac(I,J+1) - 2*vmac(I,J) + vmac(I,J-1));
+Diffv(I,J) = nu * vdiff;
+
+
+return
 end

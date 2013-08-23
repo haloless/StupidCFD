@@ -14,30 +14,40 @@
 % ## along with Octave; see the file COPYING.  If not, see
 % ## <http://www.gnu.org/licenses/>.
 
-% ## mac_rhs
+% ## MonomialBasis1D
 
 % ## Author: homu <homu@HOMU-PC>
-% ## Created: 2013-06-26
+% ## Created: 2013-07-29
 
-function [ rhs ] = mac_rhs (ustar,vstar, nx,ny, dx,dy,dt)
-    N = nx * ny;
-    % rhs = zeros(N,1);
-    
-    % idx = 0;
-    % for j = 2:ny+1
-        % for i = 2:nx+1
-            % idx = idx + 1;
-            
-            % divu = (ustar(i,j)-ustar(i-1,j)) / dx + (vstar(i,j)-vstar(i,j-1)) / dy;
-            % rhs(idx) = -divu / dt;
-        % end
-    % end
-    
-    rhs = 1/dx * (ustar(2:nx+1,2:ny+1) - ustar(1:nx,2:ny+1)) + ... 
-        1/dy* (vstar(2:nx+1,2:ny+1) - vstar(2:nx+1,1:ny));
-    rhs = -1/dt * rhs;
-    rhs = reshape(rhs, N, []);
-    
-    % inject reference pressure
-    rhs(1) = 0;
+function [ p,dpdx ] = MonomialBasis1D (p_order,xs)
+
+if iscolumn(xs); xs=xs'; end;
+
+n = length(xs);
+e0 = zeros(1,n);
+e1 = ones(1,n);
+
+switch p_order
+case {0}
+    p = e1;
+    dpdx = e0;
+case {1}
+    p = [e1; xs];
+    dpdx = [e0; e1];
+case {2}
+    p = [e1; xs; xs.^2];
+    dpdx = [e0; e1; 2*xs];
+case {3}
+    p = [e1; xs; xs.^2; xs.^3];
+    dpdx = [e0; e1; 2*xs; 3*xs.^2];
+otherwise
+    error('Unsupported basis order=%d',p_order);
 end
+
+
+return
+end
+
+
+
+

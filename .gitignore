@@ -14,4 +14,8 @@
 
 # matlab/octave
 octave-core
+*.mat
+*.fig
+
+
 

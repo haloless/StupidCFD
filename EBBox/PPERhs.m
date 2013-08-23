@@ -14,30 +14,28 @@
 % ## along with Octave; see the file COPYING.  If not, see
 % ## <http://www.gnu.org/licenses/>.
 
-% ## mac_rhs
+% ## PPERhs
 
 % ## Author: homu <homu@HOMU-PC>
-% ## Created: 2013-06-26
+% ## Created: 2013-08-07
 
-function [ rhs ] = mac_rhs (ustar,vstar, nx,ny, dx,dy,dt)
-    N = nx * ny;
-    % rhs = zeros(N,1);
-    
-    % idx = 0;
-    % for j = 2:ny+1
-        % for i = 2:nx+1
-            % idx = idx + 1;
-            
-            % divu = (ustar(i,j)-ustar(i-1,j)) / dx + (vstar(i,j)-vstar(i,j-1)) / dy;
-            % rhs(idx) = -divu / dt;
-        % end
-    % end
-    
-    rhs = 1/dx * (ustar(2:nx+1,2:ny+1) - ustar(1:nx,2:ny+1)) + ... 
-        1/dy* (vstar(2:nx+1,2:ny+1) - vstar(2:nx+1,1:ny));
-    rhs = -1/dt * rhs;
-    rhs = reshape(rhs, N, []);
-    
-    % inject reference pressure
-    rhs(1) = 0;
+function [ rhs ] = PPERhs (ustar,vstar,nx,ny,dx,dy,dt)
+
+EBGlobals;
+
+N = nx * ny;
+
+I = 2:nx+1;
+J = 2:ny+1;
+
+% divu = 1/dx*(ustar(I+1,J)-ustar(I,J)) + 1/dy*(vstar(I,J+1)-vstar(I,J));
+
+divu = 1/dx*(ustar(3:nx+2,2:ny+1)-ustar(2:nx+1,2:ny+1)) + 1/dy*(vstar(2:nx+1,3:ny+2)-vstar(2:nx+1,2:ny+1));
+
+rhs = -1/dt * rho * divu;
+
+rhs = reshape(rhs,N,1);
+
+
+return
 end

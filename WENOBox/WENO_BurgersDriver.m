@@ -70,6 +70,9 @@ valid_range = 1+ngrow:nx-ngrow;
 u0 = 0.5 + sin(1*pi*xs);
 % u0 = xs>=0.5 & xs<=1;
 
+% linear advection of Gaussian, Square, Triangle and Smooth elliptic function
+
+
 u = u0;
 u_new = zeros(size(u));
 
