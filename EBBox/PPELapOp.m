@@ -19,7 +19,7 @@
 % ## Author: homu <homu@HOMU-PC>
 % ## Created: 2013-08-08
 
-function [ Lap rhs_corr ] = PPELapOp (nx,ny,dx,dy)
+function [ Lap,rhs_corr ] = PPELapOp (nx,ny,dx,dy)
 
 EBGlobals;
 

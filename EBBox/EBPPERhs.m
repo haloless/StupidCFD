@@ -14,22 +14,24 @@
 % ## along with Octave; see the file COPYING.  If not, see
 % ## <http://www.gnu.org/licenses/>.
 
-% ## PPERhs
+% ## EBPPERhs
 
 % ## Author: homu <homu@HOMU-PC>
-% ## Created: 2013-08-07
+% ## Created: 2013-08-29
 
-function [ rhs ] = PPERhs (ustar,vstar,nx,ny,dx,dy,dt)
+function [ rhs ] = EBPPERhs (ustar,vstar,nx,ny,dx,dy,dt, bx,by)
+% Description
 
 EBGlobals;
 
 I = 2:nx+1;
 J = 2:ny+1;
-divu = 1/dx*(ustar(I+1,J)-ustar(I,J)) + 1/dy*(vstar(I,J+1)-vstar(I,J));
-rhs = -1/dt * rho * divu;
+% div_vel = 1/dx * (bx(I+1,J).*ustar(I+1,J) - bx(I,J).*ustar(I,J)) ...
+    % + 1/dy * (by(I,J+1).*vstar(I,J+1) - by(I,J).*vstar(I,J));
+div_vel = 1/dx*(ustar(I+1,J)-ustar(I,J)) + 1/dy*(vstar(I,J+1)-vstar(I,J));
+rhs = -1/dt * rho * div_vel;
 
-% BC correction
-rhs(nx,1:ny) = rhs(nx,1:ny) + 1/dx^2 * POut;
+% TODO BC correction
 
 % return as a vector
 rhs = reshape(rhs,nx*ny,1);

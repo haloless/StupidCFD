@@ -29,7 +29,7 @@ clear all;
 WENO_BurgersGlobals;
 
 % flux F = F(u), must support vectorized operations
-probno = 2;
+probno = 1;
 switch probno
     case {1}
         % linear scalar transport
@@ -77,8 +77,8 @@ u = u0;
 u_new = zeros(size(u));
 
 time = 0;
-% max_time = 1.0;
-max_time = 1.5/pi;
+max_time = 1.0;
+% max_time = 1.5/pi;
 istep = 0;
 max_step = 5000;
 

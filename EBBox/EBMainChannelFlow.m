@@ -23,13 +23,14 @@ clc;
 clear all;
 
 % global variables
-EBGlobals
+EBGlobals;
 
 rho = 1;
 % nu = 1e-5;
 nu = 1e-2;
+% nu = 0.1;
 UIn = 1;
-POut = 1;
+POut = 0;
 
 
 x_lo = 0;
@@ -41,12 +42,12 @@ ylen = y_hi - y_lo;
 
 Re = UIn * ylen / nu;
 
-refine = 8;
+refine = 4;
 nx = 48 * refine;
 ny = 8 * refine;
 
 % square
-EBFracFunc = @(x,y) double(abs(x-1)<=(1/16) & abs(y-0.5)<=(1/16));
+% EBFracFunc = @(x,y) double(abs(x-1)<=(1/16) & abs(y-0.5)<=(1/16));
 
 % cylinder
 % EBFracFunc = @(x,y) double((x-1).^2+(y-0.5).^2<=(1/16)^2);
@@ -67,6 +68,16 @@ edgeys = linspace(y_lo-dy,y_hi+dy,ny+3);
 umac = zeros(nx+3,ny+2);
 vmac = zeros(nx+2,ny+3);
 pres = zeros(nx+2,ny+2);
+% storage buffers
+ustar = zeros(size(umac));
+vstar = zeros(size(vmac));
+Hu = zeros(size(umac));
+Hv = zeros(size(vmac));
+Hu_old = Hu;
+Hv_old = Hv;
+Du = zeros(size(umac));
+Dv = zeros(size(vmac));
+
 
 ebvof = EBFracFunc(Xcell,Ycell);
 % ebls = EBDistFunc(Xcell,Ycell);
@@ -90,18 +101,32 @@ end
 % umac(:,:) = UIn;
 umac(2:nx+2,2:ny+1) = UIn;
 
-% build Poisson Op
+cfl = 0.2;
+dt_max = 5e-3;
+dt = min([cfl*dh/UIn, dt_max]);
+
+% build Poisson OP
+disp('Building Poisson OP...');
 tic
-[LapOp rhs_corr] = PPELapOp(nx,ny,dx,dy);
+[LapOp,rhs_corr] = PPELapOp(nx,ny,dx,dy);
 toc
 LapPerm = symamd(LapOp);
 RLap = chol(LapOp(LapPerm,LapPerm));
 RLapt = RLap';
+% build Velocity OP
+disp('Building Velocity OP...');
+tic;
+[LapU,LapV] = VelocityLapOp(nx,ny,dx,dy,dt);
+toc;
+LapUPerm = symamd(LapU);
+RLapU = chol(LapU(LapUPerm,LapUPerm)); RLapUt = RLapU';
+LapVPerm = symamd(LapV);
+RLapV = chol(LapV(LapVPerm,LapVPerm)); RLapVt = RLapV';
 
-
-cfl = 0.2;
-dt_max = 5e-3;
-dt = min([0.125*dh^2/nu, cfl*dh/UIn, dt_max]);
+%
+ppe_A = zeros(nx,ny);
+ppe_Bx = ones(nx+1,ny);
+ppe_By = ones(nx,ny+1);
 
 max_time = 8;
 max_step = 200000;
@@ -113,7 +138,6 @@ while (time<max_time && step<max_step)
     step = step + 1;
     
     [umac,vmac] = VelocityBC(umac,vmac,nx,ny);
-    
     % impose EB
     umac(2:nx+2,2:ny+1) = (1-ebvof_macx(2:nx+2,2:ny+1)) .* umac(2:nx+2,2:ny+1);
     vmac(2:nx+1,2:ny+2) = (1-ebvof_macy(2:nx+1,2:ny+2)) .* vmac(2:nx+1,2:ny+2);
@@ -122,30 +146,76 @@ while (time<max_time && step<max_step)
     vold = vmac;
     
     % predictor
-    [Hu,Hv] = VelocityPredictor(umac,vmac,nx,ny,dx,dy,dt);
+    [Hu,Hv,Du,Dv] = VelocityPredictor(umac,vmac,nx,ny,dx,dy,dt);
     
-    ustar = umac;
-    vstar = vmac;
-    ustar(2:nx+2,2:ny+1) = umac(2:nx+2,2:ny+1) + dt*Hu(2:nx+2,2:ny+1);
-    vstar(2:nx+1,2:ny+2) = vmac(2:nx+1,2:ny+2) + dt*Hv(2:nx+1,2:ny+2);
+    % ustar(2:nx+2,2:ny+1) = umac(2:nx+2,2:ny+1) + dt*Hu(2:nx+2,2:ny+1);
+    % vstar(2:nx+1,2:ny+2) = vmac(2:nx+1,2:ny+2) + dt*Hv(2:nx+1,2:ny+2);
+    
+    if (step == 1)
+        ustar = umac + dt*Hu + dt/2*Du;
+        vstar = vmac + dt*Hv + dt/2*Dv;
+    else
+        ustar = umac + dt/2*(3*Hu-Hu_old) + dt/2*Du;
+        vstar = vmac + dt/2*(3*Hv-Hv_old) + dt/2*Dv;
+    end
+    %
+    Hu_old = Hu;
+    Hv_old = Hv;
+    
+    %
+    [ustar,vstar] = VelocityBC(ustar,vstar,nx,ny);
+    % urhs = reshape(ustar(2:nx+2,2:ny+1),(nx+1)*ny,1) + corrURhs;
+    % vrhs = reshape(vstar(2:nx+1,2:ny+2),nx*(ny+1),1) + corrVRhs;
+    % usol = LapU \ urhs;
+    % vsol = LapV \ vrhs;
+    [urhs,vrhs] = VelocityLapRhs(ustar,vstar,ustar,vstar,nx,ny,dx,dy,dt);
+    usol = urhs; usol(LapUPerm) = RLapU \ (RLapUt \ urhs(LapUPerm));
+    vsol = vrhs; vsol(LapVPerm) = RLapV \ (RLapVt \ vrhs(LapVPerm));
+    ustar(2:nx+2,2:ny+1) = reshape(usol,nx+1,ny);
+    vstar(2:nx+1,2:ny+2) = reshape(vsol,nx,ny+1);
     [ustar,vstar] = VelocityBC(ustar,vstar,nx,ny);
     
+    
     rhs = PPERhs(ustar,vstar,nx,ny,dx,dy,dt);
-    rhs = rhs + rhs_corr;
-    % sol = LapOp \ rhs;
-    sol = rhs;
-    sol(LapPerm) = RLap \ (RLapt \ rhs(LapPerm));
+    % rhs = rhs + rhs_corr;
+    if (0)
+        sol = rhs;
+        sol(LapPerm) = RLap \ (RLapt \ rhs(LapPerm));
+        pres(2:nx+1,2:ny+1) = reshape(sol,nx,ny);
+    else
+        sol = zeros(nx,ny);
+        rhs = reshape(rhs,nx,ny);
+        if (0)
+            eps_rel = 1e-9;
+            eps_abs = -1;
+            max_sol_iter = 8000;
+            [ret,sol] = EBPPESolver_cg(nx,ny,dx,dy, ppe_A,ppe_Bx,ppe_By, ...
+                sol,rhs, eps_rel,eps_abs,max_sol_iter);
+        else
+            % params.precond = 'None';
+            params.precond = 'jacobi';
+            params.tol = 1e-8;
+            %
+            % method = 'gmres';
+            % params.restart = 100;
+            % params.maxit = 500;
+            method = 'pcg';
+            params.maxit = 8000;
+            % method = 'bicgstab';
+            % params.maxit = 8000;
+            [ret,sol] = EBPPESolver(nx,ny,dx,dy, ppe_A,ppe_Bx,ppe_By, ...
+                sol,rhs, method,params);
+        end
+        if (ret~=0)
+            error('EBPPE solver failure: errno=%d',ret);
+        end
+        
+        pres(2:nx+1,2:ny+1) = sol;
+    end
     
-    phi = reshape(sol,nx,ny);
-    
-    pres(2:nx+1,2:ny+1) = phi;
     pres = PressureBC(pres,nx,ny);
     
     % corrector
-    % ucorr = 1/rho * dt/dx * (pres(2:nx+2,2:ny+1) - pres(1:nx+1,2:ny+1));
-    % vcorr = 1/rho * dt/dy * (pres(2:nx+1,2:ny+2) - pres(2:nx+1,1:ny+1));
-    % umac(2:nx+2,2:ny+1) = ustar(2:nx+2,2:ny+1) - ucorr;
-    % vmac(2:nx+1,2:ny+2) = vstar(2:nx+1,2:ny+2) - vcorr;
     [ucorr,vcorr] = VelocityCorrector(pres,rho,nx,ny,dx,dy,dt);
     umac(2:nx+2,2:ny+1) = ustar(2:nx+2,2:ny+1) + dt*ucorr(2:nx+2,2:ny+1);
     vmac(2:nx+1,2:ny+2) = vstar(2:nx+1,2:ny+2) + dt*vcorr(2:nx+1,2:ny+2);
@@ -156,7 +226,7 @@ while (time<max_time && step<max_step)
     umac(2:nx+2,2:ny+1) = (1-ebvof_macx(2:nx+2,2:ny+1)) .* umac(2:nx+2,2:ny+1);
     vmac(2:nx+1,2:ny+2) = (1-ebvof_macy(2:nx+1,2:ny+2)) .* vmac(2:nx+1,2:ny+2);
     
-    if (mod(step,100)==0)
+    if (mod(step,10)==0)
         ucell = 0.5 * (umac(1:nx+2,:) + umac(2:nx+3,:));
         vcell = 0.5 * (vmac(:,1:ny+2) + vmac(:,2:ny+3));
         

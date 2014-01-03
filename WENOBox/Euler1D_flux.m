@@ -1,4 +1,4 @@
-% ## Copyright (C) 2013 homu
+% ## Copyright (C) 2014 homu
 % ## 
 % ## This program is free software; you can redistribute it and/or modify
 % ## it under the terms of the GNU General Public License as published by
@@ -14,24 +14,20 @@
 % ## along with Octave; see the file COPYING.  If not, see
 % ## <http://www.gnu.org/licenses/>.
 
-% ## PPERhs
+% ## Euler1D_flux
 
 % ## Author: homu <homu@HOMU-PC>
-% ## Created: 2013-08-07
+% ## Created: 2014-01-03
 
-function [ rhs ] = PPERhs (ustar,vstar,nx,ny,dx,dy,dt)
+function [ fu ] = Euler1D_flux (ucons, uprim)
 
-EBGlobals;
+Euler1D_globals;
 
-I = 2:nx+1;
-J = 2:ny+1;
-divu = 1/dx*(ustar(I+1,J)-ustar(I,J)) + 1/dy*(vstar(I,J+1)-vstar(I,J));
-rhs = -1/dt * rho * divu;
+fu = zeros(size(ucons));
+fu(URHO,:) = ucons(UMX,:);
+fu(UMX,:) = ucons(URHO,:).*uprim(QVX,:).^2 + uprim(QPRES,:);
+fu(UETOT,:) = (ucons(UETOT,:) + uprim(QPRES,:)) .* uprim(QVX,:);
 
-% BC correction
-rhs(nx,1:ny) = rhs(nx,1:ny) + 1/dx^2 * POut;
 
-% return as a vector
-rhs = reshape(rhs,nx*ny,1);
 return
 end

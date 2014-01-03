@@ -14,24 +14,34 @@
 % ## along with Octave; see the file COPYING.  If not, see
 % ## <http://www.gnu.org/licenses/>.
 
-% ## PPERhs
+% ## EBPPEApplyOp
 
 % ## Author: homu <homu@HOMU-PC>
-% ## Created: 2013-08-07
+% ## Created: 2013-09-05
 
-function [ rhs ] = PPERhs (ustar,vstar,nx,ny,dx,dy,dt)
+function [ y ] = EBPPEApplyOp (nx,ny, Be,Bw,Bn,Bs,Bp, phi)
+% Description
+% A * phi = y
 
-EBGlobals;
+% check
+if (size(phi,1)~=nx+2 || size(phi,2)~=ny+2)
+    error('Input wrong size');
+end
+
+% apply BC
+% FIXME
+phi = PressureBC(phi,nx,ny);
 
 I = 2:nx+1;
 J = 2:ny+1;
-divu = 1/dx*(ustar(I+1,J)-ustar(I,J)) + 1/dy*(vstar(I,J+1)-vstar(I,J));
-rhs = -1/dt * rho * divu;
 
-% BC correction
-rhs(nx,1:ny) = rhs(nx,1:ny) + 1/dx^2 * POut;
-
-% return as a vector
-rhs = reshape(rhs,nx*ny,1);
+y = zeros(nx+2,ny+2);
+y(I,J) = Bp.*phi(I,J) ...
+- Be.*phi(I+1,J) - Bw.*phi(I-1,J) ...
+- Bn.*phi(I,J+1) - Bs.*phi(I,J-1);
+% y(I,J) = Be .* (phi(I,J) - phi(I+1,J)) ...
+% + Bw .* (phi(I,J) - phi(I-1,J)) ...
+% + Bn .* (phi(I,J) - phi(I,J+1)) ...
+% + Bs .* (phi(I,J) - phi(I,J-1));
 return
 end

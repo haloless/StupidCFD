@@ -14,24 +14,42 @@
 % ## along with Octave; see the file COPYING.  If not, see
 % ## <http://www.gnu.org/licenses/>.
 
-% ## PPERhs
+% ## VelocityLapRhs
 
 % ## Author: homu <homu@HOMU-PC>
-% ## Created: 2013-08-07
+% ## Created: 2013-08-26
 
-function [ rhs ] = PPERhs (ustar,vstar,nx,ny,dx,dy,dt)
+function [ uRhs,vRhs ] = VelocityLapRhs (ustar,vstar,ubc,vbc,nx,ny,dx,dy,dt)
 
+%
 EBGlobals;
 
-I = 2:nx+1;
-J = 2:ny+1;
-divu = 1/dx*(ustar(I+1,J)-ustar(I,J)) + 1/dy*(vstar(I,J+1)-vstar(I,J));
-rhs = -1/dt * rho * divu;
+% uRhs = zeros(nx+1,ny);
+% vRhs = zeros(nx,ny+1);
 
-% BC correction
-rhs(nx,1:ny) = rhs(nx,1:ny) + 1/dx^2 * POut;
+coefx = nu*dt/2 * 1/dx^2;
+coefy = nu*dt/2 * 1/dy^2;
 
-% return as a vector
-rhs = reshape(rhs,nx*ny,1);
+uRhs = ustar(2:nx+2,2:ny+1);
+% x-low
+uxlo = ubc(2,2:ny+1);
+uRhs(1,:) = uxlo;
+uRhs(2,:) = uRhs(2,:) + coefx*uxlo;
+%
+uRhs = reshape(uRhs, (nx+1)*ny,1);
+
+vRhs = vstar(2:nx+1,2:ny+2);
+% y-low
+vylo = vbc(2:nx+1,2);
+vRhs(:,1) = vylo;
+vRhs(:,2) = vRhs(:,2) + coefy*vylo;
+% y-high
+vyhi = vbc(2:nx+1,ny+2);
+vRhs(:,ny+1) = vyhi;
+vRhs(:,ny) = vRhs(:,ny) + coefy*vyhi;
+%
+vRhs = reshape(vRhs, nx*(ny+1),1);
+
+
 return
 end

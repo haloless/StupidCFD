@@ -19,12 +19,13 @@
 % ## Author: homu <homu@HOMU-PC>
 % ## Created: 2013-08-07
 
-function [ Hx Hy ] = VelocityPredictor (umac,vmac,nx,ny,dx,dy,dt)
+function [ Hu,Hv,Du,Dv ] = VelocityPredictor (umac,vmac,nx,ny,dx,dy,dt)
 
 EBGlobals;
 
 % x direction
-Hx = zeros(nx+3,ny+2);
+Hu = zeros(nx+3,ny+2);
+Du = zeros(nx+3,ny+2);
 I = 2:nx+2;
 J = 2:ny+1;
 
@@ -43,12 +44,15 @@ uadv = 1/dx * (max(ue,0).*umac(I,J) + min(ue,0).*umac(I+1,J)) ...
 udiff = 1/dx^2 * (umac(I+1,J) - 2*umac(I,J) + umac(I-1,J)) ...
     + 1/dy^2 * (umac(I,J+1) - 2*umac(I,J) + umac(I,J-1));
 
-Hx(I,J) = -uadv + nu*udiff;
+% Hu(I,J) = -uadv + nu*udiff;
+Hu(I,J) = -uadv;
+Du(I,J) = nu .* udiff;
 
 % clear ue uw un us vn vs;
 
 % y direction
-Hy = zeros(nx+2,ny+3);
+Hv = zeros(nx+2,ny+3);
+Dv = zeros(nx+2,ny+3);
 I = 2:nx+1;
 J = 2:ny+2;
 
@@ -67,8 +71,9 @@ vadv = 1/dx * (max(ue,0).*vmac(I,J) + min(ue,0).*vmac(I+1,J)) ...
 vdiff = 1/dx^2 * (vmac(I+1,J) - 2*vmac(I,J) + vmac(I-1,J)) ...
     + 1/dy^2 * (vmac(I,J+1) - 2*vmac(I,J) + vmac(I,J-1));
 
-Hy(I,J) = -vadv + nu*vdiff;
-
+% Hv(I,J) = -vadv + nu*vdiff;
+Hv(I,J) = -vadv;
+Dv(I,J) = nu .* vdiff;
 
 return
 end

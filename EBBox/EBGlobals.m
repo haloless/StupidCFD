@@ -23,4 +23,10 @@ global rho nu
 global UIn
 global POut
 
+% boundary conditions in order [x-low, x-high, y-low,y-high]
+global BCPhysType
+global BCUMac BCVMac
+global BCPres
+
+
 

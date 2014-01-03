@@ -31,7 +31,8 @@ xlen = x_hi - x_lo;
 y_lo = 0;
 y_hi = 1;
 ylen = y_hi - y_lo;
-refine = 10;
+% refine = 10;
+refine = 5;
 nx = 32 * refine;
 ny = 8 * refine;
 
@@ -64,6 +65,11 @@ cellys = linspace(y_lo-dy/2,y_hi+dy/2,ny+2);
 edgexs = linspace(x_lo-dx,x_hi+dx,nx+3);
 edgeys = linspace(y_lo-dy,y_hi+dy,ny+3);
 [Xcell,Ycell] = ndgrid(cellxs,cellys);
+%
+Icell = 2:nx+1;
+Jcell = 2:ny+1;
+Iedge = 2:nx+2;
+Jedge = 2:ny+2;
 
 umac = zeros(nx+3,ny+2);
 vmac = zeros(nx+2,ny+3);
@@ -75,13 +81,6 @@ Hu = zeros(size(umac));
 Hv = zeros(size(vmac));
 Hu_old = Hu;
 Hv_old = Hv;
-Du = zeros(size(umac));
-Dv = zeros(size(vmac));
-%
-pcorr = zeros(nx+2,ny+2);
-% direct forcing
-udirf = zeros(size(umac));
-vdirf = zeros(size(vmac));
 
 
 if exist('EBDistFunc','var')
@@ -99,7 +98,8 @@ if exist('EBDistFunc','var')
     ebls = EBDistFunc(Xedge,Yedge);
     ebvof_macx = zeros(size(ebls));
     mask = ebls<=-ain; ebvof_macx(mask) = 1;
-    mask = ebls>-ain & ebls<=0; ebvof_macx(mask) = yc + (yc-1)/ain*ebls(mask);
+    % mask = ebls>-ain & ebls<=0; ebvof_macx(mask) = yc + (yc-1)/ain*ebls(mask);
+    mask = ebls>-ain & ebls<=0; ebvof_macx(mask) = 1;
     mask = ebls>0 & ebls<=aout; ebvof_macx(mask) = yc - yc/aout*ebls(mask);
     mask = ebls>aout; ebvof_macx(mask) = 0;
     
@@ -107,7 +107,8 @@ if exist('EBDistFunc','var')
     ebls = EBDistFunc(Xedge,Yedge);
     ebvof_macy = zeros(size(ebls));
     mask = ebls<=-ain; ebvof_macy(mask) = 1;
-    mask = ebls>-ain & ebls<=0; ebvof_macy(mask) = yc + (yc-1)/ain*ebls(mask);
+    % mask = ebls>-ain & ebls<=0; ebvof_macy(mask) = yc + (yc-1)/ain*ebls(mask);
+    mask = ebls>-ain & ebls<=0; ebvof_macy(mask) = 1;
     mask = ebls>0 & ebls<=aout; ebvof_macy(mask) = yc - yc/aout*ebls(mask);
     mask = ebls>aout; ebvof_macy(mask) = 0;
     
@@ -121,47 +122,43 @@ else
     ebvof_macx(2:nx+2,2:ny+1) = 0.5*(ebvof(1:nx+1,2:ny+1) + ebvof(2:nx+2,2:ny+1));
     ebvof_macy(2:nx+1,2:ny+2) = 0.5*(ebvof(2:nx+1,1:ny+1) + ebvof(2:nx+1,2:ny+2));
 end
+% ebvof_macx(2:nx+2,2:ny+1) = 0.5*(ebvof(1:nx+1,2:ny+1) + ebvof(2:nx+2,2:ny+1));
+% ebvof_macy(2:nx+1,2:ny+2) = 0.5*(ebvof(2:nx+1,1:ny+1) + ebvof(2:nx+1,2:ny+2));
+%
+eb_beta = 1 - ebvof;
+eb_betax = 1 - ebvof_macx;
+eb_betay = 1 - ebvof_macy;
 % 
 ebflag = (ebvof > 0);
 ebflag_macx = (ebvof_macx > 0);
 ebflag_macy = (ebvof_macy > 0);
 %
 ebflag_solid = (ebvof>0.999);
-if (0)
-    figure;
-    subplot(2,1,1);
-    contourf(Xcell',Ycell',ebvof');
-    title('EB fraction');
-    subplot(2,1,2);
-    contourf(Xcell',Ycell',ebls');
-    title('EB levelset');
-    return
-end
 
 % initial condition
-umac(2:nx+2,2:ny+1) = UIn;
+umac(Iedge,Jcell) = UIn;
+% umac(Iedge,Jcell) = (1-ebvof_macx(Iedge,Jcell)) .* (UIn);
+
 % time stepping
 cfl = 0.25;
 % dt_max = 1e-3;
 dt_max = 5e-4;
-dt = min([cfl*dh/UIn, dt_max]);
+dt = min([0.2*dh^2/nu, cfl*dh/UIn, dt_max]);
 
 % build Poisson Op
 disp('Building Poisson OP...');
 tic;
-[LapOp rhs_corr] = PPELapOp(nx,ny,dx,dy);
+% [LapOp rhs_corr] = PPELapOp(nx,ny,dx,dy);
+[LapOp, rhs_corr] = EBPPELapOp(nx,ny,dx,dy, eb_betax(Iedge,Jcell),eb_betay(Icell,Jedge));
 toc;
 LapPerm = symamd(LapOp);
 RLap = chol(LapOp(LapPerm,LapPerm)); RLapt = RLap';
-% build Velocity OP
-disp('Building Velocity OP...');
-tic;
-[LapU,LapV] = VelocityLapOp(nx,ny,dx,dy,dt);
-toc;
-LapUPerm = symamd(LapU);
-RLapU = chol(LapU(LapUPerm,LapUPerm)); RLapUt = RLapU';
-LapVPerm = symamd(LapV);
-RLapV = chol(LapV(LapVPerm,LapVPerm)); RLapVt = RLapV';
+
+% EBPPE iteration algo.
+ebppe_A = zeros(nx,ny);
+ebppe_Bx = eb_betax(Iedge,Jcell);
+ebppe_By = eb_betay(Icell,Jedge);
+
 
 % buffer for collecting fluid drag
 % hydro_force = zeros(1,6);
@@ -178,86 +175,62 @@ while (time<max_time && step<max_step)
     step = step + 1;
     
     [umac,vmac] = VelocityBC(umac,vmac,nx,ny);
-    if (0)
-        % impose EB
-        umac(2:nx+2,2:ny+1) = (1-ebvof_macx(2:nx+2,2:ny+1)) .* umac(2:nx+2,2:ny+1);
-        vmac(2:nx+1,2:ny+2) = (1-ebvof_macy(2:nx+1,2:ny+2)) .* vmac(2:nx+1,2:ny+2);
-    end
     
     uold = umac;
     vold = vmac;
     pold = pres;
     
     % predictor
-    [Hu,Hv,Du,Dv] = VelocityPredictor(umac,vmac,nx,ny,dx,dy,dt);
-    [Gu,Gv] = VelocityCorrector(pres,rho,nx,ny,dx,dy,dt);
+    [Cu,Cv,Du,Dv] = VelocityPredictor(umac,vmac,nx,ny,dx,dy,dt);
+    Hu = Cu + Du;
+    Hv = Cv + Dv;
     
-    if (1)
-        % ustar(2:nx+2,2:ny+1) = umac(2:nx+2,2:ny+1) + dt*Hu(2:nx+2,2:ny+1) + dt*Du(2:nx+2,2:ny+1);
-        % vstar(2:nx+1,2:ny+2) = vmac(2:nx+1,2:ny+2) + dt*Hv(2:nx+1,2:ny+2) + dt*Dv(2:nx+1,2:ny+2);
-        ustar = umac + dt*(Hu+Du+Gu);
-        vstar = vmac + dt*(Hv+Dv+Gv);
-        [ustar,vstar] = VelocityBC(ustar,vstar,nx,ny);
+    if (step==1)
+        ustar = umac + dt*Hu;
+        vstar = vmac + dt*Hv;
     else
-        if (step == 1)
-            ustar = umac + dt*Hu + dt/2*Du;
-            vstar = vmac + dt*Hv + dt/2*Dv;
-        else
-            ustar = umac + dt/2*(3*Hu-Hu_old) + dt/2*Du;
-            vstar = vmac + dt/2*(3*Hv-Hv_old) + dt/2*Dv;
+        ustar = umac + dt/2*(3*Hu - Hu_old);
+        vstar = vmac + dt/2*(3*Hv - Hv_old);
+    end
+    Hu_old = Hu;
+    Hv_old = Hv;
+    
+    % EB direct forcing
+    ustar(Iedge,Jcell) = (1-ebvof_macx(Iedge,Jcell)) .* ustar(Iedge,Jcell);
+    vstar(Icell,Jedge) = (1-ebvof_macy(Icell,Jedge)) .* vstar(Icell,Jedge);
+    
+    % PPE
+    % rhs = PPERhs(ustar,vstar,nx,ny,dx,dy,dt);
+    rhs = EBPPERhs(ustar,vstar,nx,ny,dx,dy,dt, eb_betax,eb_betay);
+    % rhs = rhs + rhs_corr;
+    if (0)
+        sol = rhs;
+        sol(LapPerm) = RLap \ (RLapt \ rhs(LapPerm));
+        pres(Icell,Jcell) = reshape(sol,nx,ny);
+    else
+        eps_rel = 1e-8;
+        eps_abs = -1;
+        max_sol_iter = 5000;
+        sol = pres(Icell,Jcell);
+        rhs = reshape(rhs,nx,ny);
+        [ret,sol] = EBPPESolver_cg(nx,ny,dx,dy, ebppe_A,ebppe_Bx,ebppe_By, ...
+        sol,rhs, eps_rel,eps_abs,max_sol_iter);
+        if (ret~=0)
+            error('EBPPE solver failure: errno=%d',ret);
         end
-        %
-        Hu_old = Hu;
-        Hv_old = Hv;
-        
-        ustar = ustar + dt*Gu;
-        vstar = vstar + dt*Gv;
-        
-        [ustar,vstar] = VelocityBC(ustar,vstar,nx,ny);
-        [urhs,vrhs] = VelocityLapRhs(ustar,vstar,ustar,vstar,nx,ny,dx,dy,dt);
-        usol = urhs; usol(LapUPerm) = RLapU \ (RLapUt \ urhs(LapUPerm));
-        vsol = vrhs; vsol(LapVPerm) = RLapV \ (RLapVt \ vrhs(LapVPerm));
-        ustar(2:nx+2,2:ny+1) = reshape(usol,nx+1,ny);
-        vstar(2:nx+1,2:ny+2) = reshape(vsol,nx,ny+1);
-        [ustar,vstar] = VelocityBC(ustar,vstar,nx,ny);
+        pres(Icell,Jcell) = sol;
     end
     
-    if (1)
-        % EB direct forcing
-        udirf(2:nx+2,2:ny+1) = -ebvof_macx(2:nx+2,2:ny+1) .* ustar(2:nx+2,2:ny+1);
-        vdirf(2:nx+1,2:ny+2) = -ebvof_macy(2:nx+1,2:ny+2) .* vstar(2:nx+1,2:ny+2);
-        ustar(2:nx+2,2:ny+1) = ustar(2:nx+2,2:ny+1) + udirf(2:nx+2,2:ny+1);
-        vstar(2:nx+1,2:ny+2) = vstar(2:nx+1,2:ny+2) + vdirf(2:nx+1,2:ny+2);
-    end
-    
-    rhs = PPERhs(ustar,vstar,nx,ny,dx,dy,dt);
-    rhs = rhs + rhs_corr;
-    sol = rhs;
-    sol(LapPerm) = RLap \ (RLapt \ rhs(LapPerm));
-    
-    pcorr(2:nx+1,2:ny+1) = reshape(sol,nx,ny);
-    pcorr = PressureBC(pcorr,nx,ny);
+    pres = PressureBC(pres,nx,ny);
     
     % corrector
-    % [ucorr,vcorr] = VelocityCorrector(pres,rho,nx,ny,dx,dy,dt);
-    [ucorr,vcorr] = VelocityCorrector(pcorr,rho,nx,ny,dx,dy,dt);
-    umac(2:nx+2,2:ny+1) = ustar(2:nx+2,2:ny+1) + dt*ucorr(2:nx+2,2:ny+1);
-    vmac(2:nx+1,2:ny+2) = vstar(2:nx+1,2:ny+2) + dt*vcorr(2:nx+1,2:ny+2);
+    [ucorr,vcorr] = VelocityCorrector(pres,rho,nx,ny,dx,dy,dt);
+    umac = ustar + dt*eb_betax.*ucorr;
+    vmac = vstar + dt*eb_betay.*vcorr;
     [umac,vmac] = VelocityBC(umac,vmac,nx,ny);
-    %
-    pres = pres + pcorr;
-    pres = PressureBC(pres,nx,ny);
-
     
-    % % EB direct forcing
-    % udirf(2:nx+2,2:ny+1) = -ebvof_macx(2:nx+2,2:ny+1) .* umac(2:nx+2,2:ny+1);
-    % vdirf(2:nx+1,2:ny+2) = -ebvof_macy(2:nx+1,2:ny+2) .* vmac(2:nx+1,2:ny+2);
-    % % umac(2:nx+2,2:ny+1) = (1-ebvof_macx(2:nx+2,2:ny+1)) .* umac(2:nx+2,2:ny+1);
-    % % vmac(2:nx+1,2:ny+2) = (1-ebvof_macy(2:nx+1,2:ny+2)) .* vmac(2:nx+1,2:ny+2);
-    % umac(2:nx+2,2:ny+1) = umac(2:nx+2,2:ny+1) + udirf(2:nx+2,2:ny+1);
-    % vmac(2:nx+1,2:ny+2) = vmac(2:nx+1,2:ny+2) + vdirf(2:nx+1,2:ny+2);
     
-    if (mod(step,100)==0)
+    if (mod(step,10)==0)
         ucell = 0.5 * (umac(1:nx+2,:) + umac(2:nx+3,:));
         vcell = 0.5 * (vmac(:,1:ny+2) + vmac(:,2:ny+3));
         
@@ -321,47 +294,24 @@ while (time<max_time && step<max_step)
             colorbar;
             
             subplot(subnrow,subncol,5);
-            % hydro_fx = -1/dt * rho*dx*dy * sum(udirf(ebflag_macx));
-            % hydro_fy = -1/dt * rho*dx*dy * sum(vdirf(ebflag_macy));
-            % xdirf = 0.5 * (udirf(1:nx+2,:) + udirf(2:nx+3,:));
-            % ydirf = 0.5 * (vdirf(:,1:ny+2) + vdirf(:,2:ny+3));
-            % hydro_fx = -1/dt * rho*dx*dy * sum(xdirf(ebflag));
-            % hydro_fy = -1/dt * rho*dx*dy * sum(ydirf(ebflag));
-            hydro_fxdf = -1/dt * rho*dx*dy * sum(udirf(ebflag_macx));
-            hydro_fydf = -1/dt * rho*dx*dy * sum(vdirf(ebflag_macy));
-            
-            
+            % drag and lift
             [diffu diffv] = VelocityDiffusion(uold,vold,nx,ny,dx,dy,dt);
             [gpx,gpy] = VelocityCorrector(pold,rho,nx,ny,dx,dy,dt);
             xdirf = rho * ebvof_macx .* (gpx + diffu);
             ydirf = rho * ebvof_macy .* (gpy + diffv);
-            % hydro_fx1 = dx*dy * sum(xdirf(ebflag_macx));
-            % hydro_fy1 = dx*dy * sum(ydirf(ebflag_macy));
             xdirf = 0.5 * (xdirf(1:nx+2,:)+xdirf(2:nx+3,:));
             ydirf = 0.5 * (ydirf(:,1:ny+2)+ydirf(:,2:ny+3));
             hydro_fx = dx*dy * sum(xdirf(ebflag));
             hydro_fy = dx*dy * sum(ydirf(ebflag));
-            % hydro_fx2 = dx*dy * sum(xdirf(:));
-            
-            % hydro_force(end+1,1:3) = [time, hydro_fx, hydro_fy];
-            % plot(hydro_force(:,1),hydro_force(:,2), hydro_force(:,1),hydro_force(:,3));
-            % legend('Drag (Fx)', 'Lift (Fy)');
-            % hydro_force(end+1,1:5) = [time,hydro_fx,hydro_fy,hydro_fx1,hydro_fx2];
-            % plot(hydro_force(:,1),hydro_force(:,2), hydro_force(:,1),hydro_force(:,3), ...
-                % hydro_force(:,1),hydro_force(:,4), hydro_force(:,1),hydro_force(:,5));
-            % legend('Fx','Fy','Fx-MAC','Fx-total');
-            % xlim([0 max_time]);
-            hydro_force(end+1,1:5) = [time, hydro_fx, hydro_fy, hydro_fxdf,hydro_fydf];
-            plot(hydro_force(:,1),hydro_force(:,2), hydro_force(:,1),hydro_force(:,3), ...
-                hydro_force(:,1),hydro_force(:,4));
-            legend('Drag (Fx)', 'Lift (Fy)', 'Drag (direct)');
+            hydro_force(end+1,1:3) = [time, hydro_fx, hydro_fy];
+            plot(hydro_force(:,1),hydro_force(:,2), hydro_force(:,1),hydro_force(:,3));
+            legend('Drag (Fx)', 'Lift (Fy)');
             title(['hydrodynamics force ', num2str(hydro_fx)]);
             
             subplot(subnrow,subncol,6);
             plot(hydro_force(:,1),hydro_force(:,2)/(0.5*rho*UIn^2*cylinder_D), ...
-                hydro_force(:,1),hydro_force(:,4)/(0.5*rho*UIn^2*cylinder_D), ...
                 hydro_force(:,1),hydro_force(:,3)/(0.5*rho*UIn^2*cylinder_D));
-            legend('Cd (stress)', 'Cd (direct)', 'Cl (stress)');
+            legend('C_drag (stress)', 'C_lift (stress)');
             title(['Cd=', num2str(hydro_fx/(0.5*rho*UIn^2*cylinder_D)), ...
             ';Cl=', num2str(hydro_fy/(0.5*rho*UIn^2*cylinder_D))]);
             

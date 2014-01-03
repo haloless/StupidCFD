@@ -33,11 +33,13 @@ vmac(1,2:ny+2) = -vmac(2,2:ny+2);
 
 % y low
 umac(2:nx+2,1) = -umac(2:nx+2,2);
+% umac(2:nx+2,1) = umac(2:nx+2,2);
 vmac(2:nx+1,1) = vmac(2:nx+1,3);
 vmac(2:nx+1,2) = 0;
 
 % y high
 umac(2:nx+2,ny+2) = -umac(2:nx+2,ny+1);
+% umac(2:nx+2,ny+2) = umac(2:nx+2,ny+1);
 vmac(2:nx+1,ny+3) = vmac(2:nx+1,ny+1);
 vmac(2:nx+1,ny+2) = 0;
 

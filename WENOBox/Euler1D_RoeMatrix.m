@@ -1,4 +1,4 @@
-% ## Copyright (C) 2013 homu
+% ## Copyright (C) 2014 homu
 % ## 
 % ## This program is free software; you can redistribute it and/or modify
 % ## it under the terms of the GNU General Public License as published by
@@ -14,24 +14,40 @@
 % ## along with Octave; see the file COPYING.  If not, see
 % ## <http://www.gnu.org/licenses/>.
 
-% ## PPERhs
+% ## Euler1D_RoeMatrix
 
 % ## Author: homu <homu@HOMU-PC>
-% ## Created: 2013-08-07
+% ## Created: 2014-01-03
 
-function [ rhs ] = PPERhs (ustar,vstar,nx,ny,dx,dy,dt)
+function [ R,D,L ] = Euler1D_RoeMatrix (uconsl,uconsr, upriml,uprimr)
 
-EBGlobals;
+Euler1D_globals;
 
-I = 2:nx+1;
-J = 2:ny+1;
-divu = 1/dx*(ustar(I+1,J)-ustar(I,J)) + 1/dy*(vstar(I,J+1)-vstar(I,J));
-rhs = -1/dt * rho * divu;
+rhol = uconsl(URHO);
+rhor = uconsr(URHO);
 
-% BC correction
-rhs(nx,1:ny) = rhs(nx,1:ny) + 1/dx^2 * POut;
+vl = upriml(QVX);
+vr = uprimr(QVX);
 
-% return as a vector
-rhs = reshape(rhs,nx*ny,1);
+% total specific enthalpy
+hl = (uconsl(UETOT) + upriml(QPRES)) / rhol;
+hr = (uconsr(UETOT) + uprimr(QPRES)) / rhor;
+
+wl = sqrt(rhol);
+wr = sqrt(rhor);
+
+% mean state
+vbar = (wl*vl + wr*vr) / (wl+wr);
+hbar = (wl*hl + wr*hr) / (wl+wr);
+abar = sqrt((GAMMA-1) * (hbar-0.5*vbar^2));
+
+D = [vbar-abar, vbar, vbar+abar];
+R = [ ...
+1.0,            1.0,            1.0;
+vbar-abar,      vbar,           vbar+abar;
+hbar-vbar*abar, 0.5*vbar^2,     hbar+vbar*abar];
+L = inv(R);
+
 return
 end
+

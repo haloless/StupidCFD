@@ -14,24 +14,33 @@
 % ## along with Octave; see the file COPYING.  If not, see
 % ## <http://www.gnu.org/licenses/>.
 
-% ## PPERhs
+% ## EBPPEGenerateCoef
 
 % ## Author: homu <homu@HOMU-PC>
-% ## Created: 2013-08-07
+% ## Created: 2013-09-05
 
-function [ rhs ] = PPERhs (ustar,vstar,nx,ny,dx,dy,dt)
+function [ Be,Bw,Bn,Bs,Bp ] = EBPPEGenerateCoef (nx,ny,dx,dy, adiag,bx,by)
+% Description
 
-EBGlobals;
+% check
+if (size(adiag,1)~=nx || size(adiag,2)~=ny)
+    error('Alpha wrong size');
+end
+if (size(bx,1)~=nx+1 || size(bx,2)~=ny)
+    error('Beta_x wrong size');
+end
+if (size(by,1)~=nx || size(by,2)~=ny+1)
+    error('Beta_y wrong size');
+end
 
-I = 2:nx+1;
-J = 2:ny+1;
-divu = 1/dx*(ustar(I+1,J)-ustar(I,J)) + 1/dy*(vstar(I,J+1)-vstar(I,J));
-rhs = -1/dt * rho * divu;
+% generate coefficients
+I = 1:nx;
+J = 1:ny;
+Be = 1/dx^2 * bx(I+1,J);
+Bw = 1/dx^2 * bx(I,J);
+Bn = 1/dy^2 * by(I,J+1);
+Bs = 1/dy^2 * by(I,J);
+Bp = adiag + (Be + Bw + Bn + Bs);
 
-% BC correction
-rhs(nx,1:ny) = rhs(nx,1:ny) + 1/dx^2 * POut;
-
-% return as a vector
-rhs = reshape(rhs,nx*ny,1);
 return
 end
