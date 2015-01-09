@@ -53,6 +53,7 @@ end
 
 dsn = [1/10; 6/10; 3/10];
 eps = 1e-6;
+% eps = 1e-10;
 % alpha weights
 alphasn = dsn ./ (eps + Bsn).^2;
 

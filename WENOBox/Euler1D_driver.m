@@ -24,26 +24,57 @@ clear all;
 
 % global values
 Euler1D_globals;
-% euler_gamma = 1.4;
 GAMMA = 1.4;
 URHO = 1; UMX = 2; UETOT = 3;
 QRHO = 1; QVX = 2; QPRES = 3;
 
-prob = 'SodShocktube';
+% boundary condition
+BC_TRANSPARENT = 0;
+BC_REFLECT = 1;
+bctype = zeros(2); bctype(:) = BC_TRANSPARENT;
+
+RHO_SMALL = 1e-13;
+
+% do_positivity_limit = 1;
+do_positivity_limit = 0;
+
+% prob = 'SodShocktube';
 % prob = 'LaxTest';
+prob = 'DoubleRarefaction';
+% prob = 'LeftBlastWave';
+% prob = 'SedovBlastWave';
+% prob = 'WoodwardCollelaBlastWave';
+% prob = 'ShuOsherShockEntropy';
+% prob = 'LeblancShocktube';
+
+
 
 switch prob
 case {'SodShocktube'}
-    xlo = 0.0;
-    xhi = 1.0;
+    xlo = 0.0; xhi = 1.0;
 case {'LaxTest'}
-    xlo = -5.0;
-    xhi = 5.0;
+    xlo = -5.0; xhi = 5.0;
+case {'DoubleRarefaction'}
+    % xlo = -1.0; xhi = 1.0;
+    xlo = -0.5; xhi = 0.5;
+case {'LeftBlastWave'}
+    xlo = 0.0; xhi = 1.0;
+case {'SedovBlastWave'}
+    xlo = -2.0; xhi = 2.0;
+case {'WoodwardCollelaBlastWave'}
+    xlo = 0.0; xhi = 1.0;
+    bctype(:) = BC_REFLECT;
+case {'ShuOsherShockEntropy'}
+    xlo = -5.0; xhi = 5.0;
+case {'LeblancShocktube'}
+    xlo = -10.0; xhi = 10.0;
 otherwise
     error('Unknown problem');
 end
 xlen = xhi - xlo;
 ncell = 128;
+% ncell = 256;
+% ncell = 512;
 hx = xlen / ncell;
 
 ng = 4;
@@ -78,6 +109,65 @@ case {'LaxTest'} % Lax's Riemann problem
         end
     end
     max_time = 1.3;
+case {'DoubleRarefaction'}
+    for i = lo:hi
+        if (cellxs(i) < 0)
+            % uprim(:,i) = [7.0; -1.0; 0.2];
+            uprim(:,i) = [1.0; -2.0; 0.4];
+        else
+            % uprim(:,i) = [7.0; 1.0; 0.2];
+            uprim(:,i) = [1.0; 2.0; 0.4];
+        end
+    end
+    % max_time = 0.6;
+    max_time = 0.15;
+case {'LeftBlastWave'}
+    for i = lo:hi
+        if (cellxs(i) < 0.5)
+            uprim(:,i) = [1.0; 0.0; 1000.0];
+        else
+            uprim(:,i) = [1.0; 0.0; 0.01];
+        end
+    end
+    max_time = 0.012;
+case {'SedovBlastWave'}
+    for i = lo:hi
+        if (abs(cellxs(i)) < hx)
+            uprim(:,i) = [1.0; 0.0; (GAMMA-1)*3200000/hx];
+        else
+            uprim(:,i) = [1.0; 0.0; 1e-12];
+        end
+    end
+    max_time = 0.001;
+case {'WoodwardCollelaBlastWave'}
+    for i = lo:hi
+        if (cellxs(i) < 0.1) % left
+            uprim(:,i) = [1.0; 0.0; 1000.0];
+        elseif (cellxs(i) >= 0.9) % right
+            uprim(:,i) = [1.0; 0.0; 100.0];
+        else % middle
+            uprim(:,i) = [1.0; 0.0; 0.01];
+        end
+    end
+    max_time = 0.038;
+case {'ShuOsherShockEntropy'}
+    for i = lo:hi
+        if (cellxs(i) < -4.0)
+            uprim(:,i) = [3.857143; 2.629369; 10.33333];
+        else
+            uprim(:,i) = [1+0.2*sin(5*cellxs(i)); 0.0; 1.0];
+        end
+    end
+    max_time = 1.8;
+case {'LeblancShocktube'}
+    for i = lo:hi
+        if (cellxs(i) < 0.0)
+            uprim(:,i) = [2.0; 0.0; 1.0e9];
+        else
+            uprim(:,i) = [0.001; 0.0; 1.0];
+        end
+    end
+    max_time = 0.0001;
 otherwise
     error('Unknown problem.')
 end
@@ -85,7 +175,10 @@ ucons = Euler1D_PrimToCons(uprim,ucons,lo,hi);
 
 
 max_step = 100 * ncell;
+% NOTE CFL must be set small if positivity limiter is used.
 cfl = 0.5;
+% cfl = 0.1;
+% cfl = 0.05;
 dt = max_time / max_step;
 time = 0.0;
 step = 0;
@@ -118,9 +211,11 @@ while (time<max_time && step<max_step)
         
         % conservative -> primitive
         uprim = Euler1D_ConsToPrim(ucons,uprim, lo,hi);
+        eint = 1/(GAMMA-1) .* uprim(QPRES,vrange) ./ uprim(QRHO,vrange);
         xs = cellxs(vrange);
-        plot(xs,uprim(QRHO,vrange),'x-', xs,uprim(QVX,vrange),'x-', xs,uprim(QPRES,vrange),'x-');
-        legend('density','velocity','pressure');
+        plot(xs,uprim(QRHO,vrange),'x-', xs,uprim(QVX,vrange),'x-', ...
+        xs,uprim(QPRES,vrange),'x-', xs, eint);
+        legend('density','velocity','pressure','internal');
         title(prompt);
         drawnow;
     end

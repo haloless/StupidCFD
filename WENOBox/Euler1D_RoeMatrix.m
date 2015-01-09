@@ -39,6 +39,8 @@ wr = sqrt(rhor);
 % mean state
 vbar = (wl*vl + wr*vr) / (wl+wr);
 hbar = (wl*hl + wr*hr) / (wl+wr);
+ekbar = 0.5 * vbar^2;
+eibar = hbar - ekbar;
 abar = sqrt((GAMMA-1) * (hbar-0.5*vbar^2));
 
 D = [vbar-abar, vbar, vbar+abar];
@@ -46,7 +48,19 @@ R = [ ...
 1.0,            1.0,            1.0;
 vbar-abar,      vbar,           vbar+abar;
 hbar-vbar*abar, 0.5*vbar^2,     hbar+vbar*abar];
-L = inv(R);
+% L = inv(R);
+ih = 1 / (hbar - 0.5*vbar^2);
+L = [ ...
+vbar/(2*abar)+0.25*vbar^2*ih, -1/(2*abar)-0.5*vbar*ih, 0.5*ih;
+1-0.5*ih*vbar^2, ih*vbar, -ih;
+-vbar/(2*abar)+0.25*vbar^2*ih, 1/(2*abar)-0.5*vbar*ih, 0.5*ih];
+
+% check
+if (0)
+    if (norm(L*R-eye(3)) > 1e-12)
+        error('inverse of right eigenmatrix invalid')
+    end
+end
 
 return
 end

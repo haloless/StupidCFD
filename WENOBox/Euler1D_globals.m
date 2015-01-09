@@ -26,4 +26,16 @@ global URHO UMX UETOT;
 % primitive
 global QRHO QVX QPRES;
 
+% BC type
+global BC_TRANSPARENT BC_REFLECT
+global bctype
+
+global RHO_SMALL
+
+% limiter
+global do_positivity_limit
+
+
+
+
 

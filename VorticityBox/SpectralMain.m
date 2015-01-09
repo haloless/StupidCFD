@@ -48,7 +48,8 @@ dt = 1e-2;
 
 % initial vorticity
 [is,js] = meshgrid(1:Nx,1:Ny);
-[xs,ys] = meshgrid((1:Nx)*dx-dx/2,(1:Ny)*dy-dy/2);
+% [xs,ys] = meshgrid((1:Nx)*dx-dx/2,(1:Ny)*dy-dy/2);
+[xs,ys] = meshgrid((1:Nx)*dx-dx,(1:Ny)*dy-dy);
 
 prob_name = 'vortice2';
 
@@ -121,7 +122,7 @@ while (time<max_time && istep<max_step)
     time = time + dt;
     istep = istep + 1;
     
-    if (mod(istep,10)==0)
+    if (mod(istep,100)==0)
         disp(['step=', int2str(istep), ...
             ';time=', num2str(time)]);
     end

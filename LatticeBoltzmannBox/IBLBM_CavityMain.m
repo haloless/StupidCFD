@@ -19,7 +19,7 @@
 % ## Author: homu <homu@HOMU-PC>
 % ## Created: 2013-08-13
 
-function [velx,vely] = LBMSRT_CavityMain
+function [velx,vely] = IBLBM_CavityMain
 % clc;
 % clear all;
 

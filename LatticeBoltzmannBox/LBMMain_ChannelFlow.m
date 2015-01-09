@@ -42,6 +42,7 @@ cs2 = 1/3 * qc^2;
 
 % determine parameters
 Re = 100;
+Re = 150;
 UMax = 0.1;
 % % relaxation parameter, must < 2
 % omega = 1.7;
@@ -101,7 +102,7 @@ for i = 1:9
     fs(:,i) = qwgt(i) * rho .* (1 + 3*eu + 9/2*eu.^2 - 3/2*(ux.^2+uy.^2));
 end
 
-max_step = 20000;
+max_step = 50000;
 max_time = max_step * dt;
 time = 0;
 step = 0;
@@ -110,7 +111,7 @@ while (step<max_step && time<max_time)
     step = step + 1;
     
     % macroscopic variables
-    rho = sum(fs')';
+    rho = sum(fs,2);
     ux = (fs * qex') ./ rho;
     uy = (fs * qey') ./ rho;
     
@@ -172,7 +173,7 @@ while (step<max_step && time<max_time)
         subplot(subnrow,subncol,1);
         velmag = sqrt(velx.^2+vely.^2);
         velmag(ebRegion) = NaN;
-        contourf(X',Y',velmag', 32);
+        contourf(X',Y',velmag', 16);
         colorbar; 
         % shading flat;
         axis equal;
@@ -181,7 +182,7 @@ while (step<max_step && time<max_time)
         subplot(subnrow,subncol,2);
         pres = reshape(cs2*rho, nx,ny);
         pres(ebRegion) = NaN;
-        contourf(X',Y',pres', 32);
+        contourf(X',Y',pres', 16);
         colorbar;
         axis equal;
         
