@@ -36,8 +36,10 @@ G = -1.2;  % Amplitude of the molecular interaction force
 omega1 = 1.;  % Relaxation parameter for fluid 1
 omega2 = 1.;  % Relaxation parameter for fluid 2
 
-maxT   = 80000;    % total number of iterations
-tPlot  = 40;       % iterations between successive graphical outputs
+% maxT   = 80000;    % total number of iterations
+% tPlot  = 40;       % iterations between successive graphical outputs
+maxT   = 10000;    % total number of iterations
+tPlot  = 50;       % iterations between successive graphical outputs
 
 % D2Q9 LATTICE CONSTANTS
 tNS   = [4/9, 1/9,1/9,1/9,1/9, 1/36,1/36,1/36,1/36];
@@ -61,6 +63,8 @@ imagesc(rho1');
 colorbar
 title('Fluid 1 density');
 axis equal off; drawnow
+
+mov(1:maxT/tPlot) = struct('cdata',[], 'colormap',[]);
 
 % MAIN LOOP (TIME CYCLES)
 Gomega1 = G/omega1;
@@ -125,5 +129,7 @@ for cycle = 1:maxT
        imagesc(rho1'); colorbar
        title('Fluid 1 density');
        axis equal off; drawnow
+       
+       mov(cycle/tPlot) = getframe(gcf);
    end
 end

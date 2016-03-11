@@ -190,13 +190,15 @@ while (step<max_step && time<max_time)
         % colorbar; shading flat;
         psi = easy_streamfunc(xs,ys,nx,ny,dx,dy,velx,vely);
         contourf(psi', 32); colorbar;
-        axis([0 Lx 0 Ly]); axis equal;
+        axis equal;
+        axis([0 Lx 0 Ly]); 
         title(prompt);
         
         subplot(1,2,2);
         contourf(temp', 32); colorbar;
         % shading flat;
-        axis([0 Lx 0 Ly]); axis equal;
+        axis equal;
+        axis([0 Lx 0 Ly]); 
         title(prompt);
         
         drawnow;

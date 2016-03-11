@@ -421,7 +421,7 @@ while (time<max_time && step<max_step)
     % vmac = (1.0-ebvof_macy).*vmac + ebvof_macy.*eb_vmac;
     % [umac,vmac] = VelocityInterpIB(umac,vmac,nx,ny,dx,dy,dt);
     
-    if (1)
+    if (0)
         [Hu,Hv,Du,Dv] = VelocityConvection(umac,vmac,nx,ny,dx,dy,dt);
         rhs = PPERhs(dt.*(Hu+Du), dt.*(Hv+Dv), nx,ny,dx,dy,dt);
         rhs(1) = 0;
@@ -457,15 +457,17 @@ while (time<max_time && step<max_step)
             % contourf(validxs,validys, phi2(2:nx+1,2:ny+1)');
             imagesc(validxs,validys, phi2(2:nx+1,2:ny+1)');
             set(gca,'YDir','normal');
-            axis([x_lo x_hi y_lo y_hi]); 
             axis equal;
+            axis([x_lo x_hi y_lo y_hi]); 
             title(['pressure ' prompt]);
             colorbar;
             hold on;
             contour(validxs,validys, ebls(2:nx+1,2:ny+1)', [0,0],'LineColor','b','LineWidth',2);
             %
-            quiver(edgexs(2:nx+2),cellys(2:ny+1), umac(2:nx+2,2:ny+1)', zeros(nx+1,ny)');
-            quiver(cellxs(2:nx+1),edgeys(2:ny+2), zeros(nx,ny+1)',vmac(2:nx+1,2:ny+2)');
+            if (0)
+                quiver(edgexs(2:nx+2),cellys(2:ny+1), umac(2:nx+2,2:ny+1)', zeros(nx+1,ny)');
+                quiver(cellxs(2:nx+1),edgeys(2:ny+2), zeros(nx,ny+1)',vmac(2:nx+1,2:ny+2)');
+            end
             hold off;
             
             subplot(subnrow,subncol,2);
@@ -473,8 +475,8 @@ while (time<max_time && step<max_step)
             % vel(ebflag) = NaN;
             contourf(validxs,validys, vel(2:nx+1,2:ny+1)');
             % imagesc(validxs,validys, vel(2:nx+1,2:ny+1)');
-            axis([x_lo x_hi y_lo y_hi]); 
             axis equal;
+            axis([x_lo x_hi y_lo y_hi]); 
             title(['velocity ']);
             colorbar;
             hold on;
@@ -568,12 +570,12 @@ if (1)
     
     figure;
     subplot(1,2,1);
-    plot(validxs,vmac(2:nx+1,jaxis), validxs,vana(2:nx+1,jaxis));
+    plot(validxs,vmac(2:nx+1,jaxis),'x', validxs,vana(2:nx+1,jaxis));
     legend('sim','ana');
     title('vel');
     
     subplot(1,2,2);
-    plot(validxs,0.5*(pres(2:nx+1,jaxis-1)+pres(2:nx+1,jaxis)), ...
+    plot(validxs,0.5*(pres(2:nx+1,jaxis-1)+pres(2:nx+1,jaxis)),'x', ...
     validxs,0.5*(pp(2:nx+1,jaxis-1)+pp(2:nx+1,jaxis)));
     legend('sim','ana');
     title('pres');
