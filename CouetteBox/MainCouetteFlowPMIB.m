@@ -33,12 +33,12 @@ y_hi = 2.0;
 ylen = y_hi - y_lo;
 % nx = 16;
 % ny = 16;
-% nx = 32;
-% ny = 32;
+nx = 32;
+ny = 32;
 % nx = 48;
 % ny = 48;
-nx = 64;
-ny = 64;
+% nx = 64;
+% ny = 64;
 % nx = 80;
 % ny = 80;
 % nx = 25;
@@ -277,7 +277,7 @@ if (1)
     end
     end
     %
-    vana = zeros(nx+2,ny+2);
+    vana = zeros(nx+2,ny+3);
     for i = 1:nx+2
     for j = 1:ny+3
         r = sqrt(cellxs(i)^2 + edgeys(j)^2);
@@ -421,12 +421,13 @@ while (time<max_time && step<max_step)
     % vmac = (1.0-ebvof_macy).*vmac + ebvof_macy.*eb_vmac;
     % [umac,vmac] = VelocityInterpIB(umac,vmac,nx,ny,dx,dy,dt);
     
-    if (0)
+    % pressure reconstruction
+    if (1)
         [Hu,Hv,Du,Dv] = VelocityConvection(umac,vmac,nx,ny,dx,dy,dt);
-        rhs = PPERhs(dt.*(Hu+Du), dt.*(Hv+Dv), nx,ny,dx,dy,dt);
-        rhs(1) = 0;
-        sol = rhs;
-        sol(LapPerm) = RLap \ (RLapt \ rhs(LapPerm));
+        rhs2 = PPERhs(dt.*(Hu+Du), dt.*(Hv+Dv), nx,ny,dx,dy,dt);
+        rhs2(1) = 0;
+        sol = rhs2;
+        sol(LapPerm) = RLap \ (RLapt \ rhs2(LapPerm));
         pres(2:nx+1,2:ny+1) = reshape(sol,nx,ny);
     end
     
