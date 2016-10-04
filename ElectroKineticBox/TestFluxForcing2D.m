@@ -9,7 +9,7 @@ xlo = 0; xhi = Lx;
 ylo = 0; yhi = Ly;
 
 
-dh = D / 16.0;
+dh = D / 10.0;
 nx = round(Lx / dh);
 ny = round(Ly / dh);
 dx = Lx / nx;
@@ -26,7 +26,7 @@ partrad(1) = 1;
 partdu(1) = -3.0;
 partpos(2,:) = [ 5.0, 7.0 ];
 partrad(2) = 2.0;
-partdu(2) = -4.0;
+partdu(2) = -2.0;
 partpos(3,:) = [ 8.0, 4.0 ];
 partrad(3) = 1.5;
 partdu(3) = -1.0;
@@ -59,7 +59,7 @@ tag_solid = find(tag==-1);
 tag_ghost = find(tag==0);
 
 
-bctype = [ 2, 2; 1, 0 ];
+bctype = [ 2, 2; 1, 1 ];
 bcval = [ 0.0, 0.0; 0.0, 0.0 ];
 
 ind = reshape(1:nx*ny, nx,ny);
@@ -70,6 +70,7 @@ tic;
 toc;
 
 bint = zeros(nx,ny);
+if (1)
 disp(['Build Interpolation'])
 tic;
 for j = 1:ny
@@ -130,12 +131,19 @@ end
 end
 end
 toc;
-
+end
 
 
 rhs = -rLap + bint(:);
 
-sol = ALap \ rhs;
+if (0)
+    sol = ALap \ rhs;
+end
+if (1)
+    % [sol,flag,relres,iter] = gmres(ALap, rhs, 20, 1e-8, 2000);
+    [sol,flag,relres,iter] = bicgstab(ALap, rhs, 1e-6, 2000);
+    disp(['solver: flag=',int2str(flag), '; res=',num2str(relres), '; iter=',int2str(iter)]);
+end
 sol = reshape(sol,nx,ny);
 
 sol(tag_solid) = nan;
@@ -152,5 +160,59 @@ axis equal;
 hold on;
 contour(xcell,ycell,sdf,[0,0]);
 hold off;
+
+% analytical flux from internal boundary
+% = (particle circumference) * (flux density)
+flux_ana = sum(2*pi*partrad.*partdu)
+if (1)
+    % check numerical flux through external wall 
+    % they should be equal
+    flux_wall = 0;
+    if bctype(2,1) == 1
+        flux_wall = flux_wall + sum(bcval(2,1)-sol(:,1))/(dy/2)*dx;
+    end
+    if bctype(2,2) == 1
+        flux_wall = flux_wall + sum(bcval(2,2)-sol(:,ny))/(dy/2)*dx;
+    end
+    flux_wall
+end
+if (1)
+    % check numerical flux through internal particles
+    % they should be equal to the numerical flux through external wall
+    flux_part = 0;
+    for j = 1:ny
+    for i = 1:nx
+    if tag(i,j) == 0
+        if tag(i+1,j) == 1
+            ff = (sol(i+1,j)-sol(i,j)) / dx * dy;
+            flux_part = flux_part + ff;
+        end
+        if tag(i-1,j) == 1
+            ff = (sol(i-1,j)-sol(i,j)) / dx * dy;
+            flux_part = flux_part + ff;
+        end
+        if tag(i,j+1) == 1
+            ff = (sol(i,j+1)-sol(i,j)) / dy * dx;
+            flux_part = flux_part + ff;
+        end
+        if tag(i,j-1) == 1
+            ff = (sol(i,j-1)-sol(i,j)) / dy * dx;
+            flux_part = flux_part + ff;
+        end
+    end
+    end
+    end
+    flux_part
+end
+
+
+
+
+
+
+
+
+
+
 
 
