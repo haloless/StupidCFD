@@ -69,9 +69,9 @@ tic;
 [ ALap, rLap ] = MakeLap2Da(nx,ny,dx,dy, bctype,bcval);
 toc;
 
-bint = zeros(nx,ny);
-if (1)
 disp(['Build Interpolation'])
+Aint = spdiags(ones(nx*ny,1), 0, nx*ny,nx*ny);
+bint = zeros(nx*ny,1);
 tic;
 for j = 1:ny
 for i = 1:nx
@@ -107,9 +107,8 @@ if tag(i,j) == 0
     dub = partdu(owner(i,j));
     
     idx = ind(i,j);
-    ALap(idx,:) = 0;
-    ALap(idx,idx) = c0;
-    bint(i,j) = dub;
+    Aint(idx,idx) = 0;
+    bint(idx) = dub / c0;
     
     [ is, js, ws ] = CellInterpCoef2D(x1,y1, nx,ny,dx,dy,xlo,ylo);
     for k = 1:4
@@ -117,7 +116,7 @@ if tag(i,j) == 0
         if tag(idk) ~= 1
             error('bad interp');
         end
-        ALap(idx,idk) = ALap(idx,idk) + c1*ws(k);
+        Aint(idx,idk) = Aint(idx,idk) + c1*ws(k)/(-c0);
     end
     [ is, js, ws ] = CellInterpCoef2D(x2,y2, nx,ny,dx,dy,xlo,ylo);
     for k = 1:4
@@ -125,25 +124,54 @@ if tag(i,j) == 0
         if tag(idk) ~= 1
             error('bad interp');
         end
-        ALap(idx,idk) = ALap(idx,idk) + c2*ws(k);
+        Aint(idx,idk) = Aint(idx,idk) + c2*ws(k)/(-c0);
     end
 end
 end
 end
 toc;
-end
 
 
-rhs = -rLap + bint(:);
 
-if (0)
-    sol = ALap \ rhs;
-end
+rhs = -rLap;
+sol = zeros(nx*ny,1);
+% diagonal of ALap, needed by relaxation
+dLap = spdiags(ALap, 0);
+
+% initial
+sol = Aint*sol + bint;
+res = rhs - ALap*sol;
+res(tag_ghost) = 0;
+rnorm0 = norm(res);
+disp(['|res0|=',num2str(rnorm0)]);
+
 if (1)
-    % [sol,flag,relres,iter] = gmres(ALap, rhs, 20, 1e-8, 2000);
-    [sol,flag,relres,iter] = bicgstab(ALap, rhs, 1e-6, 2000);
-    disp(['solver: flag=',int2str(flag), '; res=',num2str(relres), '; iter=',int2str(iter)]);
+% use simple relaxation
+for iter = 1:99999
+    sold = sol;
+    sol = (rhs - ALap*sol) ./ dLap + sol;
+    
+    omega = 1.0;
+    sol = omega.*sol + (1-omega).*sold;
+    
+    
+    sol = Aint*sol + bint;
+    
+    res = rhs - ALap*sol;
+    res(tag_ghost) = 0;
+    rnorm = norm(res);
+    
+    if mod(iter,100) == 0
+        disp(['|res|=',num2str(rnorm)]);
+    end
+    if rnorm <= rnorm0*1e-8 | rnorm<=1e-8
+        disp(['converged']);
+        disp(['|res|=',num2str(rnorm)]);
+        break;
+    end
 end
+end
+
 sol = reshape(sol,nx,ny);
 
 sol(tag_solid) = nan;
