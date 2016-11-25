@@ -35,10 +35,17 @@ k2 = kx.^2 + ky.^2;
 
 fs = zeros(nx,ny);
 gs = zeros(nx,ny);
-% fs(:,:) = sin(xs) .* cos(xs) + 2*nu*cos(xs).*sin(ys);
-% gs(:,:) = sin(ys) .* cos(ys) - 2*nu*sin(xs).*cos(ys);
+if 0
+fs(:,:) = sin(xs) .* cos(xs) + 2*nu*cos(xs).*sin(ys);
+gs(:,:) = sin(ys) .* cos(ys) - 2*nu*sin(xs).*cos(ys);
+end
+if 0
 fs(:,round(ny*1/4)) = -1;
 fs(:,round(ny*3/4)) = 1;
+end
+if 1
+fs(nx/2+1,ny/2+1) = 1.0 / (dx*dy);
+end
 
 if (1)
     figure;
