@@ -28,9 +28,10 @@ up = zeros(6,np);
 up(1,:) = 1.0;
 
 mob = EwaldMobMatrix(ewald,np,xp);
-
+lub = EwaldLubMatrix(ewald,np,xp);
 
 res = inv(mob);
+res = res + lub;
 
 uvec = reshape(up,[],1);
 
