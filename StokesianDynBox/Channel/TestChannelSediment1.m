@@ -1,6 +1,8 @@
 
 clear all;
 
+addpath('../');
+
 CommonGlobals;
 CommonInit;
 
