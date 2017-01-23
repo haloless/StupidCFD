@@ -1,15 +1,19 @@
-function [fig] = PlotSphereFibonacciGrid ( ng, xg )
+function [fig] = PlotSphereFibonacciGrid ( ng, xg, scale )
 
 fig = figure ( );
 clf
 hold on
 
+if ~exist('scale','var')
+	scale = [ 1, 1, 1 ];
+end
+
 % draw sphere
 [ x, y, z ] = sphere ( 40 );
 shrink = 0.95;
-x = shrink * x;
-y = shrink * y;
-z = shrink * z;
+x = shrink * x * scale(1);
+y = shrink * y * scale(2);
+z = shrink * z * scale(3);
 c = ones ( size ( z ) );
 % surf ( x, y, z, c, 'EdgeColor','none');
 surf ( x, y, z, c);
