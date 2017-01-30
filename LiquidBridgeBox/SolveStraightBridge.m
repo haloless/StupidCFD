@@ -9,7 +9,14 @@ vfunc = @(a) StraightVolume(R1,R2,H,a) - V;
 % solve cylinder radius
 disp(mfilename);
 rguess = R1*0.1;
-r = fsolve(vfunc,rguess);
+if 1
+	% use Matlab FSOLVE
+	r = fsolve(vfunc,rguess);
+else
+	% use our own Newton's method
+	% tolerance based on input volume
+	r = SolveFunc(vfunc,rguess,V*1.0e-3);
+end
 
 % calculate two embracing angles
 alpha1 = asin(r/R1);

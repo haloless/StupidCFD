@@ -8,12 +8,27 @@ if R2 < 0
 	R2 = 0;
 end
 
-[~,alpha1] = SolveStraightBridge(R1,R2,H,V);
+if 0
+	% initial guess with straight cylindrical profile
+	[~,alpha1] = SolveStraightBridge(R1,R2,H,V);
+else
+	alpha1 = estim_alpha(R1,R2,H,V);
+end
 
+% this is the volume function V = V(alpha1)
+% it is to solve the embracing angle alpha1 with this nonlinear relationship
 vfun = @(a1) calc_vol(R1,R2,H,theta1,theta2,a1) - V;
 
 disp(mfilename);
-alpha1 = fsolve(vfun,alpha1);
+if 0
+	% use Matlab FSOLVE
+	alpha1 = fsolve(vfun,alpha1);
+else
+	% use our own Newton's method
+	% tolerance is based on the input volume
+	tol = V * 1.0e-5;
+	alpha1 = SolveFunc(vfun,alpha1,tol);
+end
 
 alpha2 = calc_alpha2(R1,R2,H,theta1,theta2, alpha1);
 
@@ -109,6 +124,31 @@ function [vol] = calc_vol(R1,R2,H,theta1,theta2, alpha1)
 	vol = vrot - vcap1 - vcap2;
 	return
 end
+
+function [alpha] = estim_alpha(R1,R2,H,V)
+	% if R2 > 0
+		% R = DerjaguinRadius(R1,R2);
+		% h = -H/2 + 0.5*sqrt(H^2+2*V/pi/R);
+	% else
+		% R = R1;
+		% h = -H + sqrt(H^2+V/pi/R);
+	% end
+	% alpha = sqrt(2*h/R);
+	
+	if R2 > 0
+		coef = 1 + R1/R2;
+	else
+		coef = 1;
+	end
+	
+	Hstar = H / R1;
+	Vstar = V / (pi*R1^3);
+	a2 = (-Hstar + sqrt(Hstar^2+coef*Vstar)) / coef * 2;
+	alpha = sqrt(a2);
+	
+	return
+end
+
 
 
 
