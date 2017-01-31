@@ -63,11 +63,16 @@ for iface = 1:ntri
 		[N,Nu,Nv] = ShapeFunc(u,v);
 		
 		posg = pos * N;
+		x = posg(1);
+		y = posg(2);
+		z = posg(3);
+		
 		eu = pos * Nu;
 		ev = pos * Nv;
 		
 		ds = 0.5 * norm(cross(eu,ev));
 		sval = 1.0;
+		sval = x^2 + y^2;
 		sint = sint + sval*ds*c;
 	end
 	aint = aint + sint;
