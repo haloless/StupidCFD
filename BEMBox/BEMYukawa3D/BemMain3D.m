@@ -20,44 +20,55 @@ kappa = 0.5;
 % kappa = 0.01;
 % kappa = 0.001;
 
+%
+%
+%
 disp('Generate mesh');
 
 % generate sphere surface
+% the utility function in SphereGridBox can help
 addpath('../../SphereGridBox');
+
 if 1
+	% generate basic unit sphere grid
 	% use refined icosahedron
-	% vert0 = IcosahedralPoints(2);
-	vert0 = IcosahedralPoints(3);
-	% vert0 = IcosahedralPoints(4);
-	face0 = convhull(vert0(1,:),vert0(2,:),vert0(3,:));
+	[vert0,face0] = IcosahedralGrid(3);
+	% [vert0,face0] = IcosahedralGrid(4);
 end
+
 % build surface grid
 if 0
+	% single sphere
 	vert = vert0;
 	face = face0;
 end
 if 1
+	% two sphere
 	v1 = [vert0(1,:)-1.5;vert0(2,:);vert0(3,:)];
 	v2 = [vert0(1,:)+1.5;vert0(2,:);vert0(3,:)];
 	f1 = face0;
 	f2 = f1 + size(v1,2);
 	vert = [v1, v2];
 	face = [f1; f2];
-
 end
 
-% vertex/face number
+% build mesh connectivity
+[edge,face2edge,edge2face] = MeshConnection(face);
+
+% report vertex/face number
 nvert = size(vert,2);
+nedge = size(edge,1);
 nface = size(face,1);
 disp(['vertex=',int2str(nvert)]);
+disp(['edge=',int2str(nedge)]);
 disp(['face=',int2str(nface)]);
 
 % BC
 bc = zeros(2,nface);
-bc(1,:) = 1;
-bc(2,:) = 1.0;
-% bc(1,:) = 2;
-% bc(2,:) = -3;
+% bc(1,:) = 1;
+% bc(2,:) = 1.0;
+bc(1,:) = 2;
+bc(2,:) = -1.5;
 
 % mesh status
 facecent = zeros(3,nface);
@@ -110,9 +121,11 @@ sol = gmres(amat,bvec,20,1.0e-8,2000);
 if 1
 	figure;
 	% trimesh(face,vert(1,:),vert(2,:),vert(3,:));
-	trimesh(face,vert(1,:),vert(2,:),vert(3,:),sol);
+	% trimesh(face,vert(1,:),vert(2,:),vert(3,:),sol);
+	trisurf(face,vert(1,:),vert(2,:),vert(3,:),sol);
+	% shading interp;
 	hold on;
-	quiver3(facecent(1,:),facecent(2,:),facecent(3,:),facenvec(1,:),facenvec(2,:),facenvec(3,:));
+	% quiver3(facecent(1,:),facecent(2,:),facecent(3,:),facenvec(1,:),facenvec(2,:),facenvec(3,:));
 	hold off;
 	axis equal;
 	xlabel('x');ylabel('y');zlabel('z');
@@ -156,88 +169,6 @@ if 0
     contourf(xgrid,ygrid,fgrid);
     axis equal;
 end
-
-
-return
-
-
-%
-% matrix and vector
-%
-disp('Build linear equations');
-tic;
-Amat = zeros(nelem,nelem);
-bvec = zeros(nelem,1);
-for j = 1:nelem
-    for i = 1:nelem
-        % 
-        rij = norm(x(:,j)-x(:,i));
-        is_singular = (rij <= lenmax*cutoff);
-        
-        [aa,bb] = BemCoef(x(1,i),x(2,i),j, is_singular);
-        if i == j
-            bb = 0.5;
-        end
-        
-        if bc(1,j) == bc_dir
-            Amat(i,j) = Amat(i,j) - aa;
-            bvec(i) = bvec(i) - bb*bc(2,j);
-        elseif bc(1,j) == bc_neu
-            Amat(i,j) = Amat(i,j) + bb;
-            bvec(i) = bvec(i) + aa*bc(2,j);
-        end
-    end
-end
-toc;
-
-%
-% solution
-%
-disp('Solver');
-tic;
-sol = Amat \ bvec;
-u = sol;
-toc;
-
-% u contains both value and derivative
-% replace all Dirichlet BC
-uval = sol;
-for i = 1:nelem
-    if bc(1,i) == bc_dir
-        uval(i) = bc(2,i);
-    end
-end
-
-
-
-%
-% evaluate fields
-%
-disp('Fields');
-tic;
-f = zeros(nfield,1);
-for j = 1:nelem
-    if bc(1,j) == bc_dir
-        f0 = bc(2,j);
-        df0 = u(j);
-    elseif bc(1,j) == bc_neu
-        f0 = u(j);
-        df0 = bc(2,j);
-    end
-
-    for i = 1:nfield
-        % 
-        rij = norm(x(:,j)-xfield(:,i));
-        is_singular = (rij <= lenmax*cutoff);
-        
-        [aa,bb] = BemCoef(xfield(1,i),xfield(2,i),j, is_singular);
-        f(i) = f(i) + aa*df0 - bb*f0;
-    end
-end
-toc;
-
-
-
 
 
 

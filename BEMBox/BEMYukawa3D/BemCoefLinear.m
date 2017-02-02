@@ -35,11 +35,7 @@ zz = ipos(3);
 acoef = zeros(3,1);
 bcoef = zeros(3,1);
 
-% if (level~=1)
-	% error(['Unsupported quadrature level=',int2str(level)]);
-% end
-
-if (level == 1 || 1)
+if (level == 1)
 	% gauss on triangle
 	ng = 7;
 	[wg,xg,yg] = TriangleGaussRule(ng);
@@ -57,46 +53,76 @@ if (level == 1 || 1)
     bcoef = bcoef + bb;
 	
 elseif (level==3)
-    error('not supported');
 	% radial singular
 	
 	ng = 7;
 	[wg,xg] = LineGaussRule(ng);
 	
+	%
 	afun = @(x,y,z) YukawaG(xx,yy,zz, x,y,z, kappa);
 	
-	aa = 0;
-	aa = aa + TriangleRadSingularInteg(afun,jpos,va,vcen, ng,wg,xg,ng,wg,xg);
-	aa = aa + TriangleRadSingularInteg(afun,jpos,vcen,vb, ng,wg,xg,ng,wg,xg);
+	aa = LinRadInteg(afun, v1,v2,v3, ng,wg,xg,ng,wg,xg);
+	acoef = acoef + aa;
 	
+	%
 	bfun = @(x,y,z) YukawaF(xx,yy,zz, x,y,z, nvx,nvy,nvz, kappa);
-	bb = 0;
-	bb = bb + TriangleRadSingularInteg(bfun,jpos,va,vcen, ng,wg,xg,ng,wg,xg);
-	bb = bb + TriangleRadSingularInteg(bfun,jpos,vcen,vb, ng,wg,xg,ng,wg,xg);
 	
-% elseif (level==99)
-	% % use matlab INTEGRAL2, slow
+	bb = LinRadInteg(bfun, v1,v2,v3, ng,wg,xg,ng,wg,xg);
+	bcoef = bcoef + bb;
 	
-	% afun = @(s,t) YukawaG(xx,yy,zz, ...
-		% (1-s-t)*x1+s*x2+t*x3,...
-		% (1-s-t)*y1+s*y2+t*y3,...
-		% (1-s-t)*z1+s*z2+t*z3,...
-		% kappa);
-	% tmax = @(s) 1-s;
-
-	% aa = integral2(afun, 0,1, 0,tmax);
-	% aa = aa * ds/0.5;
-
-	% bfun = @(s,t) YukawaF(xx,yy,zz, ...
-		% (1-s-t)*x1+s*x2+t*x3,...
-		% (1-s-t)*y1+s*y2+t*y3,...
-		% (1-s-t)*z1+s*z2+t*z3,... 
-		% nvx,nvy,nvz,...
-		% kappa);
-	% tmax = @(s) 1-s;
-
-	% bb = integral2(bfun, 0,1, 0,tmax);
-	% bb = bb * ds/0.5;
+elseif (level==99)
+	% use matlab INTEGRAL2, slow
+	smax = @(t) 1-t;
+	tmax = @(s) 1-s;
+	
+	afun = @(s,t) YukawaG(xx,yy,zz, ...
+		(1-s-t)*x1+s*x2+t*x3,...
+		(1-s-t)*y1+s*y2+t*y3,...
+		(1-s-t)*z1+s*z2+t*z3,...
+		kappa) .* (1-s-t);
+	acoef(1) = integral2(afun, 0,1, 0,tmax);
+	
+	afun = @(s,t) YukawaG(xx,yy,zz, ...
+		(1-s-t)*x1+s*x2+t*x3,...
+		(1-s-t)*y1+s*y2+t*y3,...
+		(1-s-t)*z1+s*z2+t*z3,...
+		kappa) .* s;
+	acoef(2) = integral2(afun, 0,1, 0,tmax);
+	
+	afun = @(s,t) YukawaG(xx,yy,zz, ...
+		(1-s-t)*x1+s*x2+t*x3,...
+		(1-s-t)*y1+s*y2+t*y3,...
+		(1-s-t)*z1+s*z2+t*z3,...
+		kappa) .* t;
+	acoef(3) = integral2(afun, 0,1, 0,tmax);
+	
+	
+	bfun = @(s,t) YukawaF(xx,yy,zz, ...
+		(1-s-t)*x1+s*x2+t*x3,...
+		(1-s-t)*y1+s*y2+t*y3,...
+		(1-s-t)*z1+s*z2+t*z3,... 
+		nvx,nvy,nvz,...
+		kappa);
+	bcoef(1) = integral2(bfun, 0,1, 0,tmax);
+	
+	bfun = @(s,t) YukawaF(xx,yy,zz, ...
+		(1-s-t)*x1+s*x2+t*x3,...
+		(1-s-t)*y1+s*y2+t*y3,...
+		(1-s-t)*z1+s*z2+t*z3,... 
+		nvx,nvy,nvz,...
+		kappa) .* (s);
+	bcoef(2) = integral2(bfun, 0,1, 0,tmax);
+	
+	bfun = @(s,t) YukawaF(xx,yy,zz, ...
+		(1-s-t)*x1+s*x2+t*x3,...
+		(1-s-t)*y1+s*y2+t*y3,...
+		(1-s-t)*z1+s*z2+t*z3,... 
+		nvx,nvy,nvz,...
+		kappa) .* (t);
+	bcoef(3) = integral2(bfun, 0,1, 0,tmax);
+	
+	acoef = acoef .* ds/0.5;
+	bcoef = bcoef .* ds/0.5;
 else
 	error(['Unknown quadrature level=',int2str(level)]);
 end
@@ -124,7 +150,7 @@ function [f] = YukawaF(x0,y0,z0,x1,y1,z1,nx,ny,nz,k)
 rx = x1 - x0;
 ry = y1 - y0;
 rz = z1 - z0;
-r = sqrt(rx.^2 + ry.^2 + rz.^2);
+r = sqrt(rx.^2 + ry.^2 + rz.^2) + 1.0e-6;
 rinv = 1.0 ./ r;
 
 g = YukawaG(x0,y0,z0,x1,y1,z1,k);
@@ -160,6 +186,54 @@ aint = norm(aint);
 aint = 0.5 * aint;
 
 cint = cint * aint;
+
+
+return
+end
+
+function [cint] = LinRadInteg(qfunc,x0,x1,x2, nga,wga,xga, ngr,wgr,xgr)
+
+h = 1/sqrt(2);
+
+cint = zeros(3,1);
+for i = 1:nga
+	% angle
+	phi = pi/4 * xga(i);
+	cphi = cos(phi);
+	sphi = sin(phi);
+	cang = cos(phi+pi/4);
+	sang = sin(phi+pi/4);
+	wphi = wga(i);
+	
+	for j = 1:ngr
+		% radius
+		xi = (xgr(j)+1)/2;
+		rad = xi * h/cphi;
+		wrad = wgr(j);
+		
+		e1 = rad * cang;
+		e2 = rad * sang;
+		qpos = x0 + e1*(x1-x0) + e2*(x2-x0);
+		
+		% function value
+		qval = qfunc(qpos(1),qpos(2),qpos(3));
+		
+		jacob = rad * wphi*wrad * (pi/4) * (0.5*h/cphi);
+		
+		cint(1) = cint(1) + qval*jacob * (1-e1-e2);
+		cint(2) = cint(2) + qval*jacob * (e1);
+		cint(3) = cint(3) + qval*jacob * (e2);
+	end
+end
+
+% patch area
+% note coef 0.5 is already treated in preceding integration
+aint = cross(x1-x0,x2-x0);
+% aint = 0.5 * aint(3);
+% aint = aint(3);
+aint = norm(aint);
+
+cint = cint .* aint;
 
 
 return
