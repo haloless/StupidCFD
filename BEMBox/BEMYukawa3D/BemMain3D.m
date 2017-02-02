@@ -26,8 +26,8 @@ disp('Generate mesh');
 addpath('../../SphereGridBox');
 if 1
 	% use refined icosahedron
-	vert0 = IcosahedralPoints(2);
-	% vert0 = IcosahedralPoints(3);
+	% vert0 = IcosahedralPoints(2);
+	vert0 = IcosahedralPoints(3);
 	% vert0 = IcosahedralPoints(4);
 	face0 = convhull(vert0(1,:),vert0(2,:),vert0(3,:));
 end
@@ -98,8 +98,9 @@ end
 % build matrix
 disp('Build matrix');
 tic;
-BemBuildConstElem;
+% BemBuildConstElem2;
 % BemBuildNodePatch;
+BemBuildLinearElem;
 toc;
 
 % solve
@@ -108,8 +109,8 @@ sol = gmres(amat,bvec,20,1.0e-8,2000);
 
 if 1
 	figure;
-	trimesh(face,vert(1,:),vert(2,:),vert(3,:));
-	% trimesh(face,vert(1,:),vert(2,:),vert(3,:),sol);
+	% trimesh(face,vert(1,:),vert(2,:),vert(3,:));
+	trimesh(face,vert(1,:),vert(2,:),vert(3,:),sol);
 	hold on;
 	quiver3(facecent(1,:),facecent(2,:),facecent(3,:),facenvec(1,:),facenvec(2,:),facenvec(3,:));
 	hold off;
@@ -122,37 +123,40 @@ return
 %
 % evaluate fields
 %
-disp('Fields');
-xgrid = linspace(-2,2,21);
-ygrid = linspace(-2,2,21);
-[xgrid,ygrid] = ndgrid(xgrid,ygrid);
-fgrid = zeros(size(xgrid));
+if 0
+    disp('Fields');
+    xgrid = linspace(-2,2,21);
+    ygrid = linspace(-2,2,21);
+    [xgrid,ygrid] = ndgrid(xgrid,ygrid);
+    fgrid = zeros(size(xgrid));
 
-tic;
-for kelem = 1:nface
-	if bc(1,kelem) == 1
-		f0 = bc(2,kelem);
-		df0 = sol(kelem);
-	elseif bc(1,kelem) == 2
-		f0 = sol(kelem);
-		df0 = bc(2,kelem);
-	end
-	
-	for i = 1:numel(fgrid)
-		level = 1;
-		[aa,bb] = BemCoef2([xgrid(i),ygrid(i),0], kelem, level);
-		fgrid(i) = fgrid(i) + aa*df0 - bb*f0;
-	end
-	
-	if mod(kelem,20) == 0
-		disp(['elem=',int2str(kelem)]);
-	end
+    tic;
+    for kelem = 1:nface
+        if bc(1,kelem) == 1
+            f0 = bc(2,kelem);
+            df0 = sol(kelem);
+        elseif bc(1,kelem) == 2
+            f0 = sol(kelem);
+            df0 = bc(2,kelem);
+        end
+        
+        for i = 1:numel(fgrid)
+            level = 1;
+            [aa,bb] = BemCoef2([xgrid(i),ygrid(i),0], kelem, level);
+            fgrid(i) = fgrid(i) + aa*df0 - bb*f0;
+        end
+        
+        if mod(kelem,20) == 0
+            disp(['elem=',int2str(kelem)]);
+        end
+    end
+    toc;
+
+    figure;
+    contourf(xgrid,ygrid,fgrid);
+    axis equal;
 end
-toc;
 
-figure;
-contourf(xgrid,ygrid,fgrid);
-axis equal;
 
 return
 
