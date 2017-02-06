@@ -4,19 +4,25 @@
 %%
 function [r,alpha1,alpha2] = SolveStraightBridge(R1,R2,H,V)
 
-vfunc = @(a) StraightVolume(R1,R2,H,a) - V;
+Vinv = 1/V;
+
+% normalize by input volume for numerical reason
+vfunc = @(a) StraightVolume(R1,R2,H,a).*Vinv - 1;
 
 % solve cylinder radius
 disp(mfilename);
 rguess = R1*0.1;
 if 1
 	% use Matlab FSOLVE
-	r = fsolve(vfunc,rguess);
+	options = optimoptions('fsolve','TolFun',1.0e-3,'TolX',1.0e-8);
+	r = fsolve(vfunc,rguess,options);
 else
 	% use our own Newton's method
 	% tolerance based on input volume
-	r = SolveFunc(vfunc,rguess,V*1.0e-3);
+	r = SolveFunc(vfunc,rguess,1.0e-3);
 end
+
+% Vsol = StraightVolume(R1,R2,H,r)
 
 % calculate two embracing angles
 alpha1 = asin(r/R1);

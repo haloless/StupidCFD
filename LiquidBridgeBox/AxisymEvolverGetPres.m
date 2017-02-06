@@ -12,9 +12,14 @@ H = bridge.H;
 theta1 = bridge.theta1;
 theta2 = bridge.theta2;
 sigma = bridge.sigma;
+V = bridge.V;
 
 % Lagrange multiplier
 pres = lambda.eqnonlin(3);
+
+% NOTE we regularize the volume constraint by V
+% so the pressure must be scaled as well
+pres = pres / V;
 
 if 0
 	%

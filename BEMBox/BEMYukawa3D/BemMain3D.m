@@ -32,8 +32,8 @@ addpath('../../SphereGridBox');
 if 1
 	% generate basic unit sphere grid
 	% use refined icosahedron
-	[vert0,face0] = IcosahedralGrid(3);
-	% [vert0,face0] = IcosahedralGrid(4);
+	% [vert0,face0] = IcosahedralGrid(3);
+	[vert0,face0] = IcosahedralGrid(4);
 end
 
 % build surface grid
@@ -63,10 +63,14 @@ disp(['vertex=',int2str(nvert)]);
 disp(['edge=',int2str(nedge)]);
 disp(['face=',int2str(nface)]);
 
+%
 % BC
+%
 bc = zeros(2,nface);
+% Dirichlet BC
 % bc(1,:) = 1;
 % bc(2,:) = 1.0;
+% Neumann BC
 bc(1,:) = 2;
 bc(2,:) = -1.5;
 

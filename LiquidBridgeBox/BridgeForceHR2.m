@@ -26,7 +26,7 @@ if 0
 else
 	% use our own Newton's method
 	% tolerance is based on the input volume
-	tol = V * 1.0e-5;
+	tol = V * 1.0e-4;
 	alpha1 = SolveFunc(vfun,alpha1,tol);
 end
 

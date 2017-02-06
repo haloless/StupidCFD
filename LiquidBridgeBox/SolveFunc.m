@@ -9,6 +9,7 @@ conv = 0;
 
 % check initial converge
 r0 = abs(f);
+disp(['|r0|=',num2str(r0)]);
 if r0 <= tol
 	conv = 1;
 	return;

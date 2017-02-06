@@ -44,17 +44,18 @@ end
 %%
 %%
 % endpoints must on sphere
-ceq(end+1) = R1 - sqrt(r1^2 + (x1-X1)^2);
+ceq(end+1) = 1 - sqrt(r1^2 + (x1-X1)^2)/R1;
 
 % check wall
 if R2 > 0
-	ceq(end+1) = R2 - sqrt(r2^2 + (X2-x2)^2);
+	ceq(end+1) = 1 - sqrt(r2^2 + (X2-x2)^2)/R2;
 else
-	ceq(end+1) = X2 - x2;
+	ceq(end+1) = (X2 - x2)/R2;
 end
 
 % volume
-ceq(end+1) = V - AxisymEvolverVolume(bridge, np,rp,xp);
+% ceq(end+1) = V - AxisymEvolverVolume(bridge, np,rp,xp);
+ceq(end+1) = 1 - AxisymEvolverVolume(bridge, np,rp,xp) / V;
 
 return
 end
