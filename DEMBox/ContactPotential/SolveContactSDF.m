@@ -54,7 +54,8 @@ for iter = 1:maxiter
 	
 	
 	rnorm = norm(rhs);
-	disp(['iter=',int2str(iter), '; res=',num2str(rnorm), '; rhs=',num2str(rhs')]);
+	disp(['iter=',int2str(iter), '; res=',num2str(rnorm), ...
+    '; rhs=',num2str(rhs'), '; x=',num2str(x')]);
 	if iter == 1
 		rnorm0 = rnorm;
 	end
