@@ -1,6 +1,14 @@
 
 function [ xs ] = chebnode(n,xa,xb)
-
+% Chebyshev points of the 2nd kind
+% (or Chebyshev extreme point)
+% (or Gauss-Chebyshev point)
+%
+% xk = cos(pi*k/n), 0<=k<=n
+% It contains two boundary nodes at endpoints +1 and -1.
+%
+% NOTE this is different from Chebyshev points of the 1st kind
+%
 if ~exist('xa','var')
 	xa = -1.0;
 end
