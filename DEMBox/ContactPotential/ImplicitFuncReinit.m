@@ -6,15 +6,18 @@ cfl = 0.2;
 dt = cfl * dx;
 niter = ceil(bandwidth/dt);
 
+% initial sign
+sgn0 = CalcSign(phi0,nx,ny,dx,dy);
+
 phi = phi0;
 
 for iter = 1:niter
 	
 	% 2nd-order RK
 	
-	phi1 = Reinit(phi0,phi,nx,ny,dx,dy,dt);
+	phi1 = Reinit(phi0,sgn0,phi,nx,ny,dx,dy,dt);
 	
-	phi2 = Reinit(phi0,phi1,nx,ny,dx,dy,dt);
+	phi2 = Reinit(phi0,sgn0,phi1,nx,ny,dx,dy,dt);
 	
 	phin = (phi + phi2) .* 0.5;
 	
@@ -30,15 +33,27 @@ end
 return
 end
 
-function [phinew] = Reinit(phi0,phi,nx,ny,dx,dy,dt)
+function [sgn] = CalcSign(phi,nx,ny,dx,dy)
 
-if 1
-	% use initial sign
-	sgn = phi0 ./ sqrt(phi0.^2 + dx^2);
-else
-	% use current sign
-	% sgn = phi ./ sqrt(phi.^2);
+dh = dx;
+
+% smeared sign
+sgn = phi ./ sqrt(phi.^2 + dh^2);
+
+if 0
+	for i = 1:nx
+	for j = 1:ny
+		if abs(phi(i,j)) < dh
+			sgn(i,j) = 0;
+		end
+	end
+	end
 end
+
+return
+end
+
+function [phinew] = Reinit(phi0,sgn0,phi,nx,ny,dx,dy,dt)
 
 phinew = phi;
 
@@ -65,7 +80,7 @@ for i = 1:nx
 		dpy = (phi(i,j+1)-phi(i,j)) / dy;
 	end
 	
-	s = sgn(i,j);
+	s = sgn0(i,j);
 	if s > 0
 		fx = max(abs(max(dmx,0)), abs(min(dpx,0)));
 		fy = max(abs(max(dmy,0)), abs(min(dpy,0)));

@@ -10,11 +10,11 @@ clear all;
 % shape2 = MakeSuperEllipse(4.0,2.5, 6,6, 3.8,1,  30/180*pi);
 % shape2 = MakeSuperEllipse(4.0,2.5, 6,6, 4.8,1,  30/180*pi);
 
-% shape1 = MakeSuperEllipse(3.0,1.5, 2,2, -3.0,0.0, 90/180*pi);
-shape1 = MakeSuperEllipse(3.0,1.5, 6,6, -3.0,0.0, 90/180*pi);
+shape1 = MakeSuperEllipse(3.0,1.5, 2,2, -3.0,0.0, 90/180*pi);
+% shape1 = MakeSuperEllipse(3.0,1.5, 6,6, -3.0,0.0, 90/180*pi);
 % shape2 = MakeSuperEllipse(4.0,2.5, 6,6, 2.5,1,  30/180*pi);
 % shape2 = MakeSuperEllipse(4.0,2.5, 4,4, 3.0,1,  30/180*pi);
-shape2 = MakeSuperEllipse(4.0,2.5, 4,4, 3.0,0,  0/180*pi);
+shape2 = MakeSuperEllipse(4.0,2.5, 4,4, 2.52,0,  30/180*pi);
 % shape2 = MakeSuperEllipse(4.0,2.5, 2,2, 2.0,1,  0/180*pi);
 
 % shape1 = MakeSuperEllipse(3.0,1.5, 6,6, -3.0,0.0, 90/180*pi);
@@ -33,7 +33,7 @@ axis equal;
 axis([-6 6 -5 5]);
 hold off;
 
-if 1
+if 0
 	% build
 	sdf1 = MakeSDF(shape1);
 	sdf2 = MakeSDF(shape2);
@@ -53,7 +53,8 @@ PlotSDF(sdf2, [0,0],'k','ShowText','on');
 % PlotSDF(sdf2, 'k','ShowText','on'); 
 hold off;
 
-xcont = SolveContactSDF(sdf1,sdf2, [(shape1.xc+shape2.xc)/2;(shape1.yc+shape2.yc)/2]);
+% [xcont,ok] = SolveContactSDF(sdf1,sdf2, [(shape1.xc+shape2.xc)/2;(shape1.yc+shape2.yc)/2])
+[xcont,ok] = SolveContactSDF2(sdf1,sdf2, [(shape1.xc+shape2.xc)/2;(shape1.yc+shape2.yc)/2])
 
 figure(hfig);
 hold on;

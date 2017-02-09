@@ -14,7 +14,7 @@ clear all;
 shape1 = MakeSuperEllipse(3.0,1.5, 6,6, -3.0,0.0, 90/180*pi);
 % shape2 = MakeSuperEllipse(4.0,2.5, 6,6, 2.5,1,  30/180*pi);
 % shape2 = MakeSuperEllipse(4.0,2.5, 4,4, 3.0,1,  30/180*pi);
-shape2 = MakeSuperEllipse(4.0,2.5, 4,4, 3.0,0,  30/180*pi);
+shape2 = MakeSuperEllipse(4.0,2.5, 4,4, 2.5,0,  30/180*pi);
 % shape2 = MakeSuperEllipse(4.0,2.5, 2,2, 2.0,1,  0/180*pi);
 
 % shape1 = MakeSuperEllipse(3.0,1.5, 6,6, -3.0,0.0, 90/180*pi);
@@ -42,10 +42,17 @@ plot(node1(1,:),node1(2,:),'.b');
 plot(node2(1,:),node2(2,:),'.r');
 hold off;
 
-if 0
+if 1
 	% build
     sdf1 = MakeGridSDF(shape1,node1,elem1);
     sdf2 = MakeGridSDF(shape2,node2,elem2);
+	
+	if 0
+		% do not converge without reinit
+		sdf1.phig = ImplicitFuncReinit(sdf1.phig,sdf1.nx,sdf1.ny,sdf1.dh,sdf1.dh, 2.0);
+		sdf2.phig = ImplicitFuncReinit(sdf2.phig,sdf2.nx,sdf2.ny,sdf2.dh,sdf2.dh, 2.0);
+	end
+	
 	save('cache/shape1.mat','sdf1');
 	save('cache/shape2.mat','sdf2');
 else
@@ -54,16 +61,11 @@ else
 	load('cache/shape2.mat','sdf2');
 end
 
-shape2.xc = shape2.xc - 0.5;
-sdf2.xg = sdf2.xg - 0.5;
-sdf2.xmin = sdf2.xmin - 0.5;
-sdf2.xmax = sdf2.xmax - 0.5;
+% shape2.xc = shape2.xc - 0.5;
+% sdf2.xg = sdf2.xg - 0.5;
+% sdf2.xmin = sdf2.xmin - 0.5;
+% sdf2.xmax = sdf2.xmax - 0.5;
 
-if 1
-    % do not converge without reinit
-    sdf1.phig = ImplicitFuncReinit(sdf1.phig,sdf1.nx,sdf1.ny,sdf1.dh,sdf1.dh, 2.0);
-    sdf2.phig = ImplicitFuncReinit(sdf2.phig,sdf2.nx,sdf2.ny,sdf2.dh,sdf2.dh, 2.0);
-end
 
 figure(hfig);
 hold on;
@@ -75,7 +77,12 @@ hold off;
 
 % return
 
-xcont = SolveContactSDF(sdf1,sdf2, [(shape1.xc+shape2.xc)/2;(shape1.yc+shape2.yc)/2]);
+xguess = [(shape1.xc+shape2.xc)/2;(shape1.yc+shape2.yc)/2];
+if 0
+	[xcont,ok] = SolveContactSDF(sdf1,sdf2, xguess)
+else
+	[xcont,ok] = SolveContactSDF2(sdf1,sdf2, xguess)
+end
 
 figure(hfig);
 hold on;
