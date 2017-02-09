@@ -1,4 +1,4 @@
-function [pos] = SolveContactSDF(sdf1,sdf2, xguess)
+function [pos,ok] = SolveContactSDF(sdf1,sdf2, xguess)
 
 % length scale
 lref = (sdf1.xmax-sdf1.xmin) / 10;
@@ -54,7 +54,8 @@ for iter = 1:maxiter
 	
 	
 	rnorm = norm(rhs);
-	disp(['iter=',int2str(iter), '; res=',num2str(rnorm), '; rhs=',num2str(rhs')]);
+	disp(['iter=',int2str(iter), '; res=',num2str(rnorm), ...
+    '; rhs=',num2str(rhs'), '; x=',num2str(x')]);
 	if iter == 1
 		rnorm0 = rnorm;
 	end
@@ -79,58 +80,18 @@ end
 
 if ~conv
 	error('Failed');
-else
-	disp(['x=',num2str(x'), '; lambda=',num2str(lambda)]);
 end
 
 pos = x;
 
+% contact flag
+ok = 0;
+if p1<0 && p2<0
+	ok = 1;
+end
+
 return
 end
-
-function [tmp] = CalcShapeInfo(shape)
-	tmp = struct();
-	
-	tmp.a = [shape.a; shape.b];
-	tmp.p = [shape.p; shape.q];
-	tmp.pa = tmp.p ./ tmp.a;
-	tmp.p1a = (tmp.p-1) ./ tmp.a;
-	
-	tmp.R = RotationMatrix(-shape.rotang);
-	tmp.xc = [shape.xc; shape.yc];
-	
-	return
-end
-
-% gradient
-function [g] = CalcG(tmp,x)
-	%
-	x0 = tmp.R * (x-tmp.xc);
-	
-	y0 = (x0./tmp.a).^(tmp.p-1);
-	
-	gvec = tmp.pa .* y0;
-	
-	g = tmp.R' * gvec;
-	
-	return
-end
-
-% hessian
-function [h] = CalcH(tmp,x)
-	%
-	x0 = tmp.R * (x-tmp.xc);
-	
-	y0 = (x0./tmp.a).^(tmp.p-2);
-	
-	hvec = tmp.pa .* tmp.p1a .* y0;
-	
-	h = tmp.R' * diag(hvec) * tmp.R;
-	
-return
-end
-
-
 
 
 
