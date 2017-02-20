@@ -3,7 +3,8 @@ clear all;
 
 a = 1.0;
 % 
-kappa = 1.0 / a;
+kappa = 2.0 / a;
+% kappa = 1.0 / a;
 % kappa = 0.5 / a;
 % kappa = 0.1 / a;
 % kappa = 0.01 / a;
@@ -13,8 +14,9 @@ lambda = 1 / kappa;
 
 
 % separation
-H = 1.0 * a;
+% H = 1.0 * a;
 % H = 0.2 * a;
+H = 0.1 * a;
 % H = 0.01 * a;
 % center distance
 R = H + a + a;
@@ -70,53 +72,56 @@ sol = mat \ rhs;
 
 acoef = sol ./ Kak;
 
-[xs,ys] = ndgrid(-a*2:0.1:R+a*2,0:0.1:a*2);
-nx = size(xs,1);
-ny = size(xs,2);
-rs = sqrt(xs.^2 + ys.^2);
-ts = atan2(ys,xs);
 
-ok = ones(nx,ny);
-ok((xs-0).^2+(ys-0).^2<a^2) = 0;
-ok((xs-R).^2+(ys-0).^2<a^2) = 0;
+if 0
+    [xs,ys] = ndgrid(-a*2:0.1:R+a*2,0:0.1:a*2);
+    nx = size(xs,1);
+    ny = size(xs,2);
+    rs = sqrt(xs.^2 + ys.^2);
+    ts = atan2(ys,xs);
 
-phis = zeros(nx,ny);
+    ok = ones(nx,ny);
+    ok((xs-0).^2+(ys-0).^2<a^2) = 0;
+    ok((xs-R).^2+(ys-0).^2<a^2) = 0;
 
-for i = 1:nx
-for j = 1:ny
-	if ok == 0 
-		continue;
-	end
-	
-	xx = xs(i,j);
-	yy = ys(i,j);
-	rr = rs(i,j);
-	rk = rr * kappa;
-	theta = ts(i,j);
-	ct = cos(theta);
-	
-	uu = 0;
-	for n = 1:cutoff2
-		nn = n - 1;
-		
-		an = acoef(n);
-		un = 0;
-		for m = 1:cutoff2
-			mm = m - 1;
-			un = un + an * (2*mm+1) * Bmat(n,m) * ModSphBesselI(mm,rk) * LegendrePoly(mm,ct);
-		end
-		
-		un = un + an * ModSphBesselK(nn,rk) * LegendrePoly(nn,ct);
-		
-		uu = uu + un;
-	end
-	
-	phis(i,j) = uu;
+    phis = zeros(nx,ny);
+
+    for i = 1:nx
+    for j = 1:ny
+        if ok == 0 
+            continue;
+        end
+        
+        xx = xs(i,j);
+        yy = ys(i,j);
+        rr = rs(i,j);
+        rk = rr * kappa;
+        theta = ts(i,j);
+        ct = cos(theta);
+        
+        uu = 0;
+        for n = 1:cutoff2
+            nn = n - 1;
+            
+            an = acoef(n);
+            un = 0;
+            for m = 1:cutoff2
+                mm = m - 1;
+                un = un + an * (2*mm+1) * Bmat(n,m) * ModSphBesselI(mm,rk) * LegendrePoly(mm,ct);
+            end
+            
+            un = un + an * ModSphBesselK(nn,rk) * LegendrePoly(nn,ct);
+            
+            uu = uu + un;
+        end
+        
+        phis(i,j) = uu;
+    end
+    end
+
+    if 1
+    phis(ok==0) = nan;
+    figure; contourf(xs,ys,phis,0:0.05:1); axis equal
+    end
+
 end
-end
-
-if 1
-phis(ok==0) = nan;
-figure; contourf(xs,ys,phis,0:0.05:1); axis equal
-end
-
