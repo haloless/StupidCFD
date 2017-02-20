@@ -162,6 +162,7 @@ for iseg = 1:nseg
     ubc = partbc(owner(im,jm));
     up = partu(owner(im,jm));
     if ubc == 0
+		% Neumann BC, for circular boundary, have to scale flux by (pi*D/4*D)
         up = up * pi/4;
         Dmat(iseg,iseg) = -1.0/dh^2;
         b2(iseg) = up/dh;
