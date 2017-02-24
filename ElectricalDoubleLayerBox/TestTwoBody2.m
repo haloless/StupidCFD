@@ -21,8 +21,8 @@ a2k = a2 * kappa;
 % H = 1.0;
 % H = 0.5;
 % H = 0.2;
-% H = 0.1;
-H = 0.0e-6;
+H = 0.1;
+% H = 0.0e-6;
 % center distance
 R = H + a1 + a2;
 
@@ -33,62 +33,7 @@ phi2 = 1.0;
 cutoff = 20;
 cutoff2 = cutoff;
 
-
-Ka1k = zeros(cutoff,1);
-Ia1k = zeros(cutoff,1);
-Ka2k = zeros(cutoff,1);
-Ia2k = zeros(cutoff,1);
-for n = 1:cutoff
-	nn = n - 1;
-	Ka1k(n) = ModSphBesselK(nn, a1k);
-	Ia1k(n) = ModSphBesselI(nn, a1k);
-	Ka2k(n) = ModSphBesselK(nn, a2k);
-	Ia2k(n) = ModSphBesselI(nn, a2k);
-end
-
-Bmat = zeros(cutoff,cutoff);
-for n = 1:cutoff
-for m = 1:cutoff
-	nn = n - 1;
-	mm = m - 1;
-	
-	Bnm = FuncB(nn,mm,kappa*R);
-	
-	Bmat(n,m) = Bnm;
-end
-end
-
-Imat = eye(cutoff);
-Lmat = zeros(cutoff,cutoff);
-Mmat = zeros(cutoff,cutoff);
-for j = 1:cutoff
-for n = 1:cutoff
-	jj = j - 1;
-	nn = n - 1;
-	
-	Bnj = Bmat(n,j);
-	Ljn = (2*jj+1) * Bnj * Ia1k(j) / Ka2k(n);
-	Mjn = (2*jj+1) * Bnj * Ia2k(j) / Ka1k(n);
-	
-	Lmat(j,n) = Ljn;
-	Mmat(j,n) = Mjn;
-end
-end
-
-mat = [Imat, Lmat; Mmat, Imat];
-
-rhs1 = zeros(cutoff,1);
-rhs1(1) = phi1;
-rhs2 = zeros(cutoff,1);
-rhs2(1) = phi2;
-rhs = [ rhs1; rhs2 ];
-
-sol = mat \ rhs;
-
-acoef = sol(1:cutoff);
-bcoef = sol(cutoff+1:end);
-acoef = acoef ./ Ka1k;
-bcoef = bcoef ./ Ka2k;
+[acoef,bcoef] = SolveTwoBodyConstPotent(a1,a2,H,kappa,cutoff,phi1,phi2);
 
 if 0
     [xs,ys] = ndgrid(-a1*2:0.1:R+a2*2,0:0.1:a1*2);
@@ -152,15 +97,16 @@ if 0
 end
 
 if 1
-    ka = kappa * a1;
-    kh = kappa * H;
-    piso = phi1;
-    a0 = acoef(1)
-    aend = acoef(end)
-    
-    up = 4*pi * (-(pi/2)*(a0/piso)*csch(ka) + ka + ka*coth(ka));
-    
-    [kh, up]
+	% plot energy
+	khs = 0.0:0.1:2.0;
+	us = [];
+	for kh = khs
+		H = kh / kappa;
+		[acoef,bcoef] = SolveTwoBodyConstPotent(a1,a2,H,kappa,cutoff,phi1,phi2);
+		u = EnergyTwoBodyConstPotent(a1,a2,H,kappa,cutoff, acoef,bcoef, phi1,phi2);
+		us(end+1) = u;
+	end
+
+	figure;
+	plot(khs,us,'x-');
 end
-
-

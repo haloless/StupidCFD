@@ -11,9 +11,9 @@ BemMeshGlobals;
 
 
 % kappa = 10.0;
-% kappa = 2.0;
+kappa = 2.0;
 % kappa = 1.0;
-kappa = 0.5;
+% kappa = 0.5;
 % kappa = 0.2;
 % kappa = 0.1;
 % kappa = 0.05;
@@ -44,8 +44,10 @@ if 0
 end
 if 1
 	% two sphere
-	v1 = [vert0(1,:)-1.5;vert0(2,:);vert0(3,:)];
-	v2 = [vert0(1,:)+1.5;vert0(2,:);vert0(3,:)];
+	% h = 0.2;
+	h = 99999;
+	v1 = [vert0(1,:)-1-h/2;vert0(2,:);vert0(3,:)];
+	v2 = [vert0(1,:)+1+h/2;vert0(2,:);vert0(3,:)];
 	f1 = face0;
 	f2 = f1 + size(v1,2);
 	vert = [v1, v2];
@@ -68,11 +70,11 @@ disp(['face=',int2str(nface)]);
 %
 bc = zeros(2,nface);
 % Dirichlet BC
-% bc(1,:) = 1;
-% bc(2,:) = 1.0;
+bc(1,:) = 1;
+bc(2,:) = 1.0;
 % Neumann BC
-bc(1,:) = 2;
-bc(2,:) = -1.5;
+% bc(1,:) = 2;
+% bc(2,:) = -1.5;
 
 % mesh status
 facecent = zeros(3,nface);
