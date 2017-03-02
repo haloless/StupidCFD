@@ -1,5 +1,6 @@
-
-function [Ynm] = SphHarm(n,m,theta,phi)
+function [Ynm] = SphHarmY(n,m,theta,phi)
+% Spherical Harmonics Y_n^m(theta,phi)
+%
 
 szt = size(theta);
 szp = size(phi);
@@ -10,20 +11,23 @@ phi = phi(:);
 absm = abs(m);
 mu = cos(theta);
 
-lp = legendre(n,mu);
-lp = lp(absm+1,:)';
+% associated Legendre function
+pnm = legendre(n,mu);
+pnm = pnm(absm+1,:)';
 
 N = sqrt(factorial(n-absm)/factorial(n+absm));
 
 em = exp(1i * m * phi);
 
-Ynm = N .* lp .* em;
+Ynm = N .* pnm .* em;
 
 if 1
+	% the phase factor
 	Ynm = Ynm * (-1)^m;
 end
 
-if 1
+if 0
+	% normalization factor
 	Ynm = Ynm * sqrt((2*n+1)/(4*pi));
 end
 
