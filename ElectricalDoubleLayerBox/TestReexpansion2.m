@@ -6,8 +6,8 @@ ImUnit = 1i;
 kappa = 1.0;
 
 pa = [ 0; 0; 0 ];
-% pb = [ 2; 1; 0.5 ];
-pb = [ 4; 1; 0.5 ];
+pb = [ 2; 1; 5 ];
+% pb = [ 0; 0; 5.0 ];
 
 pab = pa - pb;
 % pab = pb - pa;
@@ -21,7 +21,11 @@ cost = cos(theta);
 sint = sin(theta);
 
 
-ptest = [ 1; 0.5; 0.25 ];
+% ptest = [ 0.1; 0.1; 0.1 ];
+% ptest = [ 2; 0.1; 0.5 ];
+% ptest = [ 0.2; 0.1; 0.5 ];
+ptest = [ 1; 0.5; 2.5 ];
+% ptest = [ 4; 3; 2 ];
 [ra,thetaa,phia] = sh_cart2sph(ptest(1)-pa(1),ptest(2)-pa(2),ptest(3)-pa(3));
 [rb,thetab,phib] = sh_cart2sph(ptest(1)-pb(1),ptest(2)-pb(2),ptest(3)-pb(3));
 
@@ -31,9 +35,11 @@ ptest = [ 1; 0.5; 0.25 ];
 % plot3([pa(1),pb(1)],[pa(2),pb(2)],[pa(3),pb(3)],'x-')
 
 % nmax = 2;
-nmax = 20;
+% nmax = 8;
+nmax = 16;
 nmax1 = nmax + 1;
 npole = nmax1^2;
+disp(['nmax=',int2str(nmax), '; npole=',int2str(npole)]);
 
 func_sign = @(m) sign(m+0.001);
 func_anm = @(n,m) sqrt((n+m+1)*(n-m+1)/(2*n+1)/(2*n+3));
@@ -100,32 +106,6 @@ for n = 0:nmax
 end
 
 Rmat = Rmat(1:npole,1:npole);
-
-% xtmp = rand(npole,1);
-% ytmp = zeros(npole,1);
-% ztmp = zeros(npole,1);
-% for n = 0:nmax
-	% for m = -n:n
-		% inm = sh_sub2ind(n,m);
-		% ynm = 0;
-		% for s = -n:n
-			% ins = sh_sub2ind(n,s);
-			% ynm = ynm + Rmat(inm,ins) * xtmp(ins);
-		% end
-		% ytmp(inm) = ynm;
-	% end
-% end
-% for n = 0:nmax
-	% for m = -n:n
-		% inm = sh_sub2ind(n,m);
-		% znm = 0;
-		% for s = -n:n
-			% ins = sh_sub2ind(n,s);
-			% znm = znm + conj(Rmat(ins,inm)) * ytmp(ins);
-		% end
-		% ztmp(inm) = znm;
-	% end
-% end
 
 %
 %
@@ -281,9 +261,19 @@ end
 
 % bcoef = rand(npole,1);
 % bcoef = (1.0 ./ (1:npole).^2)';
-bcoef = exp(-(1:npole).^2)';
+% bcoef = exp(-(1:npole).^2)';
+bcoef = zeros(npole,1);
+for n = 0:nmax
+for m = -n:n
+	inm = sh_sub2ind(n,m);
+	% bcoef(inm) = exp(-n) * (m^2+1);
+	bcoef(inm) = 1 / bkhat(n+1) / (n+1);
+end
+end
+
 %
 Tmat = Rmat' * Smat * Rmat;
+% Tmat = Rmat * Smat * Rmat';
 % Tmat = Tmat';
 lcoef = Tmat * bcoef;
 
@@ -305,5 +295,8 @@ for n = 0:nmax
 		aval = aval + valnm;
 	end
 end
+
+disp(['bval=',num2str(bval)]);
+disp(['aval=',num2str(aval)]);
 
 
