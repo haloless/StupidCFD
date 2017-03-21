@@ -1,5 +1,5 @@
 
-clear all;
+clear;
 
 ImUnit = 1i;
 

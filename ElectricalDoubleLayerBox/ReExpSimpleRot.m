@@ -1,16 +1,17 @@
 
+%% original Cartesian base
 ex = [ 1; 0; 0 ];
 ey = [ 0; 1; 0 ];
 ez = [ 0; 0; 1 ];
 
 E = [ ex, ey, ez ];
 
-% the rotated coord
+%% the rotated coord
 
+% use center connection as new z-axis
 ezhat = pab ./ norm(pab);
 
 exhat = cross(ezhat,ez);
-% exhat = cross(ez,ezhat);
 if norm(exhat) == 0
     exhat = ex;
 end
@@ -21,22 +22,14 @@ eyhat = eyhat ./ norm(eyhat);
 
 Ehat = [ exhat, eyhat, ezhat ];
 
-
-% Qmat = zeros(3,3);
-% Qmat(1,1) = dot(exhat,ex);
-% Qmat(1,2) = dot(exhat,ey);
-% Qmat(1,3) = dot(exhat,ez);
-% Qmat(2,1) = dot(eyhat,ex);
-% Qmat(2,2) = dot(eyhat,ey);
-% Qmat(2,3) = dot(eyhat,ez);
-% Qmat(3,1) = dot(ezhat,ex);
-% Qmat(3,2) = dot(ezhat,ey);
-% Qmat(3,3) = dot(ezhat,ez);
+%% transform matrix for xhat = Q.x
 Qmat = Ehat' * E;
 
+% original z-axis in new coord
 ezprime = Qmat * ez;
 [~,thetaprime,phiprime] = sh_cart2sph(ezprime(1),ezprime(2),ezprime(3));
 
+% new z-axis in orignal coord
 [~,anggamma,angchi] = sh_cart2sph(ezhat(1),ezhat(2),ezhat(3));
 
 if 0
