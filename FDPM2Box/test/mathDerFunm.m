@@ -1,0 +1,113 @@
+function [L] = mathDerFunm(X,eV,eP,yP,yd)
+%mathDerFunm: Partial Derivative of a symmetric 2nd-order tensor function w.r.t its argument
+% Return tensor L(ij)(kl)
+% Inputs of mathDerFunm
+% X is the 3x3 tensor argument
+% eV is its eigenvector 3x3
+% eP is its eigenvalue 3x1
+% yP is the function applied to eigenvalues
+% yd is the function derivative to eigenvalues
+% Outputs of mathDerFunm
+% L is 9x9 tensor
+% The order is [ xx,yy,zz, xy,yx, yz,zy, zx,xz]
+%
+
+% TODO check X is symmetric
+
+tol = 1.0e-9;
+
+Is = [eye(3), zeros(3); zeros(3), eye(3)/2];
+bm1 = [1,1,1,0,0,0]';
+
+if abs(eP(1))<tol && abs(eP(2))<tol && abs(eP(3))<tol
+	% all eigenvalues close to zero
+	L = Is;
+	warning('Detect all eigenvalues close to zero');
+	
+elseif abs(eP(1)-eP(2))<tol && abs(eP(1)-eP(3))<tol
+	% 3 equal eigenvalues
+	L = yd(1) .* Is;
+	warning('Detect three equal eigenvalues');
+	
+elseif abs(eP(1)-eP(2))<tol || abs(eP(2)-eP(3))<tol || abs(eP(1)-eP(3))<tol
+	% there are 2 equal eigenvalues
+	% we have to find the permutation xa ~= xb == xc
+	if abs(eP(1)-eP(2)) < tol
+		% x3 ~= x1 == x2
+		a = 3; b = 1; c = 2;
+	elseif abs(eP(2)-eP(3)) < tol
+		% x1 ~= x2 == x3
+		a = 1; b = 2; c = 3;
+	else
+		% x2 ~= x3 == x1
+		a = 2; b = 3; c = 1;
+	end
+	warning('Detect two equal eigenvalues: x%d~=x%d==x%d', a,b,c);
+	
+	xa = eP(a); xb = eP(b); xc = eP(c);
+	ya = yP(a); yb = yP(b); yc = yP(c);
+	yda = yd(a); ydb = yd(b); ydc = yd(c);
+	
+	% 5 scalars
+	s = zeros(5,1);
+	s(1) = (ya-yc)/(xa-xc)^2 - ydc/(xa-xc);
+	s(2) = 2*xc*(ya-yc)/(xa-xc)^2 - (xa+xc)/(xa-xc)*ydc;
+	s(3) = 2*(ya-yc)/(xa-xc)^3 - (yda+ydc)/(xa-xc)^2;
+	s(4) = xc * s(3);
+	s(5) = xc^2 * s(3);
+	
+	dX2dX = [...
+		2*X(1),	0,		0,		X(2),	0,		X(3);
+		0,		2*X(5),	0,		X(2),	X(6),	0;
+		0,		0,		2*X(9),	0,		X(6),	X(3);
+		X(2),	X(2),	0,		(X(1)+X(5))/2,	X(3)/2,			X(6)/2;
+		0,		X(6),	X(6),	X(3)/2,			(X(5)+X(9))/2,	X(2)/2;
+		X(3),	0,		X(3),	X(6)/2,			X(2)/2,			(X(1)+X(9))/2;
+	];
+	
+	% 11,22,33,12,23,31
+	x = [X(1),X(5),X(9),X(2),X(6),X(7)]';
+	
+	L = s(1)*dX2dX - s(2)*Is - s(3)*(x*x') + s(4)*(x*bm1'+bm1*x') - s(5)*(bm1*bm1');
+else
+	% all different eigenvalues
+	D = [(eP(1)-eP(2))*(eP(1)-eP(3)); (eP(2)-eP(1))*(eP(2)-eP(3)); (eP(3)-eP(1))*(eP(3)-eP(2))];
+	alfa = 0;
+	bta = 0;
+	g = zeros(3,1);
+	eD = zeros(6,3);
+	for i = 1:3
+		alfa = alfa + yP(i)*eP(i)/D(i);
+		bta = bta + yP(i)/D(i)*det(X);
+		for j = 1:3
+			g(i) = g(i) + yP(j)*eP(j)/D(j)*(det(X)/eP(j)-eP(i)^2)/eP(i)^2;
+		end
+		esq = eV(:,i)*eV(:,i)';
+		eD(:,i) = [esq(1,1),esq(2,2),esq(3,3),esq(1,2),esq(2,3),esq(3,1)]';
+	end
+	
+	y = inv(X);
+	
+	Ib = [...
+	y(1)^2, y(2)^2, y(7)^2, y(1)*y(2), y(2)*y(7), y(1)*y(7);
+	y(2)^2, y(5)^2, y(6)^2, y(5)*y(2), y(5)*y(6), y(2)*y(6);
+	y(7)^2, y(6)^2, y(9)^2, y(6)*y(7), y(9)*y(6), y(9)*y(7);
+	y(1)*y(2), y(5)*y(2), y(6)*y(7), (y(1)*y(5)+y(2)^2)/2,    (y(2)*y(6)+y(5)*y(7))/2, (y(1)*y(6)+y(2)*y(7))/2;
+	y(2)*y(7), y(5)*y(6), y(9)*y(6), (y(2)*y(6)+y(5)*y(7))/2, (y(9)*y(5)+y(6)^2)/2,    (y(9)*y(2)+y(6)*y(7))/2;
+	y(1)*y(7), y(2)*y(6), y(9)*y(7), (y(1)*y(6)+y(2)*y(7))/2, (y(9)*y(2)+y(6)*y(7))/2, (y(9)*y(1)+y(7)^2)/2;
+	];
+	
+	L = alfa*Is - bta*Ib;
+	L = L + (yd(1)+g(1))*eD(:,1)*eD(:,1)' + (yd(2)+g(2))*eD(:,2)*eD(:,2)' + (yd(3)+g(3))*eD(:,3)*eD(:,3)';
+	% L = L + eD*diag(yd+g)*eD';
+end
+
+% finally, populate L to full form
+% 6x6 -> 9x9
+% [xx,yy,zz,xy,yz,zx] -> [xx,yy,zz,xy,yx,yz,zy,zx,xz]
+L = [L(1:3,1:3), L(1:3,[4,4,5,5,6,6]); L([4,4,5,5,6,6],1:3), L([4,4,5,5,6,6],[4,4,5,5,6,6])];
+
+return
+end
+
+
