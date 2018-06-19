@@ -33,7 +33,7 @@ switch elem
         error('Unsupported element type: %s', elem);
 end
 
-node_style = 'o';
+node_style = '.';
 mesh_style = '-';
 
 xs = nodes(:,1);

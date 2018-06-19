@@ -56,8 +56,8 @@ end
 % prob = 'RP5';
 % prob = 'RP6';
 % prob = 'Bump_a'; % transcritical flow without shock
-% prob = 'Bump_b'; % transcritical flow with shock
-prob = 'Bump_c'; % subcritical
+prob = 'Bump_b'; % transcritical flow with shock
+% prob = 'Bump_c'; % subcritical
 
 
 ncell = 100;

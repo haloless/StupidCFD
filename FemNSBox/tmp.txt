@@ -1,0 +1,27 @@
+clear;
+
+fstats=@(p,t) fprintf('%d nodes, %d elements, min quality %.2f\n', ...
+                      size(p,1),size(t,1),min(simpqual(p,t)));
+
+fprintf('Rectangle with circular hole, refined at circle boundary\n');
+
+xlo = -0.2;
+xhi = 2.0;
+ylo = -0.2;
+yhi = 0.2;
+R = 0.05;
+
+h = R * 0.1;
+
+fd=@(p) ddiff(drectangle(p,xlo,xhi,ylo,yhi),dcircle(p,0,0,R));
+fh=@(p) h+0.1*dcircle(p,0,0,R);
+% fh=@(p) huniform(p);
+
+figure;
+[p,t]=distmesh2d(fd,fh,h, ...
+[xlo,ylo;xhi,yhi], ...
+[xlo,ylo;xlo,yhi;xhi,ylo;xhi,yhi]);
+
+fstats(p,t);
+
+

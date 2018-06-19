@@ -21,28 +21,6 @@ pres = lambda.eqnonlin(3);
 % so the pressure must be scaled as well
 pres = pres / V;
 
-if 0
-	%
-	r1 = rp(1);
-	r2 = rp(np);
-	alpha1 = AxisymEmbraceAngle(R1,r1);
-	alpha2 = AxisymEmbraceAngle(R2,r2);
-
-	% with positive pressure
-	[F1a] = AxisymEvalForce(alpha1,theta1,r1,pres,sigma);
-	[F2a] = AxisymEvalForce(alpha2,theta2,r2,pres,sigma);
-
-	% with negative pressure
-	[F1b] = AxisymEvalForce(alpha1,theta1,r1,-pres,sigma);
-	[F2b] = AxisymEvalForce(alpha2,theta2,r2,-pres,sigma);
-
-	if abs(F1a-F2a) <= abs(F1b-F2b)
-		pres = pres;
-	else
-		pres = -pres;
-	end
-end
-
 if 1
 	% evaluate curvature near middle part of the bridge
 	% although the curvature will not be very accurate

@@ -1,4 +1,5 @@
 function [rp,xp,pres,sene] = AxisymEvolver(bridge,np,rp,xp)
+% Function performing the interface optimization. 
 
 % bridge parameters
 R1 = bridge.R1;

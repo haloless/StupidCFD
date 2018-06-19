@@ -1,9 +1,11 @@
 function [F] = AxisymEvolverDerivForce(bridge,np,rpin,xpin)
+% Obtain the force by finite difference of free energy
 
 R1 = bridge.R1;
 H = bridge.H;
 X2 = bridge.X2;
 
+% finite difference
 dh = R1*1.0e-3;
 
 if H < dh
@@ -34,6 +36,7 @@ else
 	F = (ene2-ene0) / (dh*2);
 end
 
+% recover original bridge
 bridge.H = H;
 bridge.X2 = X2;
 

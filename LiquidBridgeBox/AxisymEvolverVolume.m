@@ -1,4 +1,5 @@
 function [vol] = AxisymEvolverVolume(bridge, np,rp,xp)
+% Evaluate the volume by revolving the interface.
 
 R1 = bridge.R1;
 R2 = bridge.R2;

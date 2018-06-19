@@ -10,6 +10,7 @@ h = a * 0.32
 np = SpiralPointsEstimNum(h/a)
 
 np = 64
+np = 128
 
 pos = SpiralPoints(a,[0,0,0]',np);
 
@@ -32,7 +33,8 @@ end
 
 havg = mean(dist(:,2))
 
-scale = [ 2, 1, 1 ];
+scale = [ 1, 1, 1 ];
+% scale = [ 2, 1, 1 ];
 pos(1,:) = scale(1) * pos(1,:);
 pos(2,:) = scale(2) * pos(2,:);
 pos(3,:) = scale(3) * pos(3,:);

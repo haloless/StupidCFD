@@ -31,7 +31,9 @@ hold off;
 % [edge,face2edge,edge2face] = MeshConnection(face);
 
 %
-nref = 5;
+nref = 1;
+% nref = 2;
+% nref = 3;
 
 [node,elem] = IcosahedralGrid(nref);
 nnode = size(node,2);

@@ -20,7 +20,7 @@
 % ## Created: 2013-07-31
 
 clc;
-clear all;
+clear;
 
 rho0 = 1; % we don't really need the density
 
@@ -53,7 +53,8 @@ timo_syy = @(x,y) zeros(size(x));
 timo_sxy = @(x,y) P0/(2*I0) * (c0^2 - y.^2);
 
 
-refine = 4;
+% refine = 4;
+refine = 8;
 nx = refine*10 + 5;
 ny = refine*2 + 1;
 h0 = L0 / nx;
@@ -64,7 +65,7 @@ re = h0 * dilation;
 weightFunc = @(q) (q<1) .* (1 - 6*q.^2 + 8*q.^3 - 3*q.^4);
 
 % finite-increment-gradient stabilization
-do_FIGStab = 0;
+do_FIGStab = 1;
 % Taylor-series-expansion based stabilization
 do_TEBStab = 0;
 if(length(find([do_FIGStab do_TEBStab])) > 1)

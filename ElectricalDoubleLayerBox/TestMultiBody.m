@@ -5,10 +5,13 @@ kappa = 2.0;
 
 pa = [ 0, 0, 0 ]';
 % pb = [ 4, 0, 0 ]';
-pb = [ 2.5, 0, 0 ]';
+% pb = [ 2.5, 0, 0 ]';
+% pb = [ 0, 0, 2.5 ]';
+pb = [ 0, 2.5, 0 ]';
 % pb = [ 3, 0, 0 ]';
 pb = rand(3,1);
-pb = pb./norm(pb) * 3.0;
+% pb = pb./norm(pb) * 3.0;
+pb = pb./norm(pb) * 2.1;
 
 % pb = [ 40, 0, 0 ]';
 
@@ -105,6 +108,7 @@ if 0
 end
 
 if 1
+	% interaction energy
 	[khats,kprimes] = ReExpFuncSingular(nmax,ra,kappa);
 	[ihats,iprimes] = ReExpFuncRegular(nmax,ra,kappa);
 	
@@ -132,6 +136,136 @@ if 1
 	disp(['ene=',num2str(ene)])
 	disp(['eint=',num2str(eint)])
 end
+
+if 1
+	% interaction force
+	
+	% for this sphere
+	cs = zeros(size(coefa));
+	for n = 0:nmax
+	for m = -n:n
+		inm = sh_sub2ind(n,m);
+		cs(inm) = as(inm)*kprimes(n+1) + bs(inm)*iprimes(n+1);
+	end
+	end
+	
+	% can be shared by all
+	alphas = zeros(npole);
+	betas = zeros(npole);
+	Ns = zeros(npole);
+	for n = 0:nmax
+	for m = -n:n
+		inm = sh_sub2ind(n,m);
+		
+		absm = abs(m);
+		
+		%
+		if m >= 0
+			alphas(inm) = 1.0;
+		else
+			alphas(inm) = (-1)^absm * factorial(n-absm) / factorial(n+absm);
+		end
+		
+		%
+		betas(inm) = 2 * factorial(n+absm) / (2*n+1) / factorial(n-absm);
+		
+		% 
+		Ns(inm) = (-1)^m * sqrt(factorial(n-absm) / factorial(n+absm));
+		
+	end
+	end
+	
+	fint = [0,0,0]';
+	for n = 0:nmax
+	for m = -n:n
+		inm = sh_sub2ind(n,m);
+		inm1 = sh_sub2ind(n,-m);
+		
+		betanm = betas(inm);
+		
+		for p = 0:nmax
+		for q = -p:p
+			ipq = sh_sub2ind(p,q);
+			
+			% x,y force
+			if q==-m-1 || q==-m+1
+				
+				c_sin_theta = 0;
+				if     p==n-1 && q==-m-1
+					c_sin_theta = -alphas(inm1)/alphas(ipq) * 1/(2*n-1) * betanm;
+				elseif p==n+1 && q==-m-1
+					c_sin_theta = alphas(inm1)/alphas(ipq) * 1/(2*n+3) * betanm;
+				elseif p==n-1 && q==-m+1
+					c_sin_theta = alphas(inm1)/alphas(ipq) * (n+m-1)*(n+m)/(2*n-1) * betanm;
+				elseif p==n+1 && q==-m+1
+					c_sin_theta = -alphas(inm1)/alphas(ipq) * (n-m+1)*(n-m+2)/(2*n+3) * betanm;
+				end
+				
+				c_cos_phi = 0;
+				c_sin_phi = 0;
+				if     q == -m-1
+					c_cos_phi = pi;
+					c_sin_phi = -pi * 1i;
+				elseif q == -m+1
+					c_cos_phi = pi;
+					c_sin_phi = pi * 1i;
+				end
+				
+				cnm = cs(inm);
+				cpq = cs(ipq);
+				Nnm = Ns(inm);
+				Npq = Ns(ipq);
+				
+				fint(1) = fint(1) + cnm*cpq*Nnm*Npq * c_sin_theta * c_cos_phi;
+				fint(2) = fint(2) + cnm*cpq*Nnm*Npq * c_sin_theta * c_sin_phi;
+			end
+			
+			% z force
+			if q==-m
+				
+				c_cos_theta = 0;
+				if     p==n-1
+					c_cos_theta = alphas(inm1)/alphas(ipq) * (n+m)/(2*n-1) * betanm;
+				elseif p==n+1
+					c_cos_theta = alphas(inm1)/alphas(ipq) * (n-m+1)/(2*n+3) * betanm;
+				end
+				
+				c_phi = pi*2;
+				
+				fint(3) = fint(3) + cs(inm)*cs(ipq)*Ns(inm)*Ns(ipq) * c_cos_theta * c_phi;
+			end
+		end
+		end
+	end
+	end
+	fint = fint .* (0.5*ra^2);
+	
+	(fint)
+	fnorm = norm(fint)
+	fint ./ fnorm
+	(pa-pb) ./ norm(pa-pb)
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

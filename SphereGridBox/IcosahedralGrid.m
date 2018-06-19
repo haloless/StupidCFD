@@ -23,6 +23,9 @@ node = point;
 nelem = 0;
 elem = [];
 
+map_to_sphere = 1;
+
+
 %
 % 1st pass, refine edges
 % add new points and number them
@@ -39,7 +42,9 @@ for iedge = 1:nedge
     for jref = 1:nref-1
         frac = jref / nref;
         xfrac = (1-frac)*xa + frac*xb;
-        xfrac = xfrac ./ norm(xfrac);
+        if map_to_sphere
+            xfrac = xfrac ./ norm(xfrac);
+        end
         
         nnode = nnode + 1;
         node(:,nnode) = xfrac;
@@ -98,7 +103,9 @@ for iface = 1:nface
 			% inside, the node has to be created
             nnode = nnode + 1;
             xnode = (w*xa + u*xb + v*xc)/nref;
-            xnode = xnode / norm(xnode);
+            if map_to_sphere
+                xnode = xnode / norm(xnode);
+            end
             
             node(:,nnode) = xnode;
             facenode(u+1,v+1) = nnode;

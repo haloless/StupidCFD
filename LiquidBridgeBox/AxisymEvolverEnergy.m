@@ -1,5 +1,8 @@
 function [sene] = AxisymEvolverEnergy(bridge, np,rp,xp)
+% The energy function to be optimized.
+% W = S_LG - cos(theta1)*S1 - cos(theta2)*S2
 
+% bridge parameters
 R1 = bridge.R1;
 R2 = bridge.R2;
 H = bridge.H;
@@ -29,8 +32,6 @@ else
 	scap2 = pi*r2^2;
 end
 
-
-
 % rotational surface
 dr = rp(2:np) - rp(1:np-1);
 dx = xp(2:np) - xp(1:np-1);
@@ -40,9 +41,6 @@ dl = sqrt(dr.^2 + dx.^2);
 rc = 0.5 * (rp(2:np)+rp(1:np-1));
 % rotational surface area
 srot = sum(2*pi * rc .* dl);
-
-
-
 
 % surface energy
 sene = srot - cos(theta1)*scap1 - cos(theta2)*scap2;

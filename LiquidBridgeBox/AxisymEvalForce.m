@@ -1,10 +1,10 @@
 %% Eval liquid bridge action by pressure and tension.
 %% Attractive +, Repulsive -
-%%  alpha: embracing angle, wall=0
-%%  theta: contact angle
-%%  r: contact ring, not sphere!!
-%%  pres:
-%%  sigma: 
+%%  alpha:  embracing angle, wall=0
+%%  theta:  contact angle
+%%  r:      contact ring, not sphere!!
+%%  pres:   pressure, convex>0, concave<0
+%%  sigma:  surface tension
 function [f,fp,ft] = AxisymEvalForce(alpha,theta,r,pres,sigma)
 
 % laplace pressure
